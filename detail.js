@@ -6,12 +6,14 @@ import {
 } from '../../components/wux'
 var app = getApp();
 var that;
-var optionId; //宝宝的Id
-var publisherId; //宝宝发布者的Id
-var joinpId; //如果当前用户已经加入，该宝宝在联系表中的Id
-var eventMoreId; //当前宝宝的宝宝扩展表Id
+var optionId; //物件的Id
+var publisherId; //物件发布者的Id
+var joinpId; //如果当前用户已经加入，该物件在联系表中的Id
+var providerpId; //如果当前用户已经加入，该物件在联系表中的Id
+var eventMoreId; //当前物件的物件扩展表Id
 var commentlist;
 var joinlist;
+var providerlist;
 var likerlist;
 let commentText; //评论输入框内容
 Page({
@@ -42,6 +44,7 @@ Page({
         favo: 0,
         join: 0,
         isMe: false,
+        isAdmin: false,
         isToResponse: false,
 
         status: 0, //tab切换按钮
@@ -57,7 +60,7 @@ Page({
         style_img: ''
     },
 
-    //生成宝宝二维码
+    //生成物件二维码
     showQrcode: function() {
         var path = '/pages/detail/detail?actid=' + optionId + "&pubid=" + publisherId;
         var width = 40;
@@ -82,14 +85,14 @@ Page({
             codeHehe: false
         })
     },
-    //打开宝宝群二维码弹窗
+    //打开物件群二维码弹窗
     showqrcode: function() {
         this.setData({
             qrcodeHe: true
         })
     },
 
-    //关闭宝宝群二维码弹窗
+    //关闭物件群二维码弹窗
     closeqrcode: function() {
         this.setData({
             qrcodeHe: false
@@ -149,7 +152,7 @@ Page({
                         join: 3, //已经无法加入
                         isMe: true,
                     })
-                    console.log("这是我的寻找");
+                    console.log("这是我的我爱");
                 }
             },
         })
@@ -177,7 +180,7 @@ Page({
                     if (ress.data) {
                         clearInterval(myInterval); //清除定时器
                         //确定收藏状态与加入状态
-                        //如果这条寻找不是自己发的
+                        //如果这条我爱不是自己发的
                         if (that.data.isMe == false) {
                             var userQuery = new Bmob.Query(Bmob.User);
                             userQuery.equalTo("objectId", ress.data);
@@ -185,6 +188,7 @@ Page({
                                 success: function(result) {
                                     var favoArray = result[0].get("eventFavo");
                                     var joinArray = result[0].get("eventJoin");
+                                    console.log(favoArray);
                                     var isFavo = false;
                                     var isJoin = false;
                                     if (favoArray != null) {
@@ -233,7 +237,7 @@ Page({
                                 }
                             });
                         }
-                        //查询宝宝信息
+                        //查询物件信息
                         var Diary = Bmob.Object.extend("Events");
                         var query = new Bmob.Query(Diary);
                         query.equalTo("objectId", optionId);
@@ -254,6 +258,7 @@ Page({
                                 var latitude = result[0].get("latitude"); //纬度
                                 var peoplenum = result[0].get("peoplenum");
                                 var joinnumber = result[0].get("joinnumber"); //已经加入的人数
+                                var providernum = result[0].get("providernum"); //已经加入的人数
                                 var agreeNum = result[0].get("likenum");
                                 var liker = result[0].get("liker");
                                 var commentNum = result[0].get("commentnum");
@@ -269,7 +274,8 @@ Page({
                                 if (result[0].get("actpic")) {
                                     url = result[0].get("actpic")._url;
                                 } else {
-                                    url = "http://bmob-cdn-14867.b0.upaiyun.com/2017/12/01/89a6eba340008dce801381c4550787e4.png";
+                                    // url = "http://bmob-cdn-14867.b0.upaiyun.com/2017/12/01/89a6eba340008dce801381c4550787e4.png";
+                                    url = "/static/images/more/cover1.png";
                                 }
                                 if (publisher.id == ress.data) {
                                     that.setData({
@@ -292,6 +298,7 @@ Page({
                                     latitude: latitude, //纬度
                                     peoplenum: peoplenum,
                                     joinnumber: joinnumber,
+                                    providernum: providernum,
                                     publisherPic: publisherPic,
                                     publisherName: publisherName,
                                     objectIds: objectIds,
@@ -309,6 +316,7 @@ Page({
                                 }
                                 that.commentQuery(result[0]);
                                 that.joinDetail(result[0]);
+                                that.providerDetail(result[0]);
                                 that.likerDetail(result[0]);
                                 that.eventMore(result[0]);
                             },
@@ -324,7 +332,7 @@ Page({
             })
         }
     },
-    //--------------查询宝宝扩展信息------------------
+    //--------------查询物件扩展信息------------------
     eventMore: function(event) {
         var Diary = Bmob.Object.extend("EventMore");
         var query = new Bmob.Query(Diary);
@@ -408,7 +416,7 @@ Page({
         });
     },
     //---------------------------------------------------
-    //获取宝宝的加入详情信息
+    //获取物件的加入详情信息
     joinDetail: function(event) {
         joinlist = new Array();
         var Contacts = Bmob.Object.extend("Contacts");
@@ -421,10 +429,10 @@ Page({
             success: function(result) {
                 for (var i = 0; i < result.length; i++) {
                     var joinuserid = result[i].get("currentUser").objectId; //加入的人的objectIdd
-                    var publisherid = result[i].get("publisher").objectId; //寻找者的objectId
-                    //先获取寻找人的联系信息
+                    var publisherid = result[i].get("publisher").objectId; //我爱者的objectId
+                    //先获取我爱人的联系信息
                     if (joinuserid == publisherid) {
-                        console.log("获取寻找者信息成功");
+                        console.log("获取我爱者信息成功");
                         var id = result[i].id;
                         var adminname = result[i].get("realname"); //加入的人的真实姓名
                         var adcontactWay = result[i].get("contactWay"); //联系方式名称
@@ -478,6 +486,7 @@ Page({
                             joinList: joinlist,
                             loading: true
                         })
+                        // console.log(jsonA);
                     }
                 }
             },
@@ -487,8 +496,89 @@ Page({
             }
         })
     },
-
-    //获取宝宝的点赞详情信息
+    //---------------------------------------------------
+    //获取物件的提供者详情信息
+    providerDetail: function(event) {
+        providerlist = new Array();
+        var Favos = Bmob.Object.extend("Favos");
+        var queryFavos = new Bmob.Query(Favos);
+        queryFavos.equalTo("event", event);
+        queryFavos.include("currentUser");
+        queryFavos.include("publisher");
+        queryFavos.descending("createAt");
+        queryFavos.find({
+            success: function(result) {
+                for (var i = 0; i < result.length; i++) {
+                    var provideruserid = result[i].get("currentUser").objectId; //加入的人的objectIdd
+                    var publisherid = result[i].get("publisher").objectId; //我爱者的objectId
+                    //先获取我爱人的联系信息
+                    if (provideruserid == publisherid) {
+                        console.log("获取有货者信息成功");
+                        var id = result[i].id;
+                        var adminname = result[i].get("realname"); //加入的人的真实姓名
+                        var adcontactWay = result[i].get("contactWay"); //联系方式名称
+                        var adcontactValue = result[i].get("contactValue"); //联系方式
+                        that.setData({
+                            adminId: provideruserid,
+                            adminname: adminname,
+                            adcontactWay: adcontactWay,
+                            adcontactValue: adcontactValue,
+                            loading: true
+                        })
+                    } else {
+                        if (provideruserid == wx.getStorageSync("user_id")) {
+                            console.log("获取有货者信息成功");
+                            var id = result[i].id;
+                            providerpId = id;
+                            var providername = result[i].get("realname"); //加入的人的真实姓名
+                            var pdcontactWay = result[i].get("contactWay"); //联系方式名称
+                            var pdcontactValue = result[i].get("contactValue"); //联系方式
+                            that.setData({
+                                providerId: id,
+                                providername: providername,
+                                pdcountIndex: getContactIndex(pdcontactWay),
+                                pdcontactValue: pdcontactValue,
+                                loading: true
+                            })
+                        }
+                        var id = result[i].id;
+                        var realname = result[i].get("realname"); //加入的人的真实姓名
+                        var contactWay = result[i].get("contactWay"); //联系方式名称
+                        var contactValue = result[i].get("contactValue"); //联系方式
+                        var providerusername = result[i].get("currentUser").username; //加入的人昵称
+                        var provideruserpic = result[i].get("currentUser").userPic; //加入的人头像
+                        var created_at = result[i].createdAt;
+                        var providertime = util.getDateDiff(created_at);
+                        var linkjoinHe = false;
+                        var jsonA;
+                        jsonA = {
+                            "id": id,
+                            "realname": realname,
+                            "provideruserid": provideruserid,
+                            "providerusername": providerusername,
+                            "provideruserpic": provideruserpic,
+                            "contactWay": contactWay,
+                            "contactValue": contactValue,
+                            "providertime": providertime,
+                            "linkjoinHe": linkjoinHe,
+                        }
+                        joinlist.push(jsonA);
+                        console.log(jsonA);
+                        that.setData({
+                            providerList: providerList,
+                            loading: true
+                        });
+                        console.log(providerList);
+                    }
+                }
+            },
+            error: function(error) {
+                common.dataLoadin(error, "loading");
+                console.log(error);
+            }
+        })
+    },
+    //获取物件的点赞详情信息
     likerDetail: function(event) {
         likerlist = new Array();
         var Likes = Bmob.Object.extend("Likes");
@@ -605,7 +695,7 @@ Page({
                                         plyre.set("avatar", value); //我的头像
                                         plyre.set("username", my_username); // 我的名称
                                         plyre.set("uid", isme);
-                                        plyre.set("wid", optionId); //宝宝ID
+                                        plyre.set("wid", optionId); //物件ID
                                         plyre.set("fid", publisherId); //
                                         plyre.set("is_read", 0); //是否已读,0代表没有,1代表读了
                                         plyre.save();
@@ -630,7 +720,7 @@ Page({
                                         plyre.set("avatar", value); //我的头像
                                         plyre.set("username", my_username); // 我的名称
                                         plyre.set("uid", isme);
-                                        plyre.set("wid", optionId); //宝宝ID
+                                        plyre.set("wid", optionId); //物件ID
                                         plyre.set("fid", publisherId); //
                                         plyre.set("is_read", 0); //是否已读,0代表没有,1代表读了
                                         plyre.save();
@@ -750,7 +840,7 @@ Page({
                             })
                         }
                     })
-                    //宝宝表中评论数量-1
+                    //物件表中评论数量-1
                     var Events = Bmob.Object.extend("Events");
                     var queryEvents = new Bmob.Query(Events);
                     queryEvents.get(optionId, {
@@ -765,7 +855,7 @@ Page({
         });
     },
 
-    //评论宝宝
+    //评论物件
     publishComment: function(e) {
         let that = this;
         var isReply = false;
@@ -836,7 +926,7 @@ Page({
                                             if (isReply) { //如果是回复评论，则消息通知行为存4
                                                 plyre.set("behavior", 4); //消息通知方式
                                                 plyre.set("noticetype", "回复");
-                                            } else { //如果不是回复评论，则是评论宝宝，消息通知行为存3
+                                            } else { //如果不是回复评论，则是评论物件，消息通知行为存3
                                                 plyre.set("behavior", 3); //消息通知方式
                                                 plyre.set("noticetype", "评论");
                                             }
@@ -914,14 +1004,14 @@ Page({
             publishContent: e.detail.value
         })
     },
-    //查看寻找大图
+    //查看我爱大图
     seeActBig: function(e) {
         wx.previewImage({
             current: that.data.listPic, // 当前显示图片的http链接
             urls: [that.data.listPic] // 需要预览的图片http链接列表
         })
     },
-    //查看寻找大图
+    //查看我爱大图
     seeqrCodeBig: function(e) {
         wx.previewImage({
             current: that.data.qrcode, // 当前显示图片的http链接
@@ -929,7 +1019,7 @@ Page({
         })
     },
 
-    //查看宝宝地图位置
+    //查看物件地图位置
     viewActAddress: function() {
         let latitude = this.data.latitude;
         let longitude = this.data.longitude;
@@ -996,14 +1086,17 @@ Page({
     //-----------------加入与收藏------------
     //现在加入功能
     click_join: function(event) {
+        //console.log(event);
+        //console.log(event.detail);
+        console.log(event.detail.formId);
         var join = that.data.join;
         if (that.data.peoplenum > 0 && (that.data.peoplenum - that.data.joinnumber) <= 0) { //如果人加入满了
             wx.showModal({
                 title: '温馨提示',
-                content: '此宝宝参加人数已满',
+                content: '此物件参加人数已满',
                 showCancel: true,
             })
-        } else if (join == "3") { //如果是自己的寻找,弹出改变宝宝状态的弹窗
+        } else if (join == "3") { //如果是自己的我爱,弹出改变物件状态的弹窗
             this.setData({
                 showStuDialog: true
             });
@@ -1035,10 +1128,9 @@ Page({
                         } else if (contactindex == 2) {
                             var contactWay = "手机号";
                         }
-                        var adminname = that.data.adminname;
+                        // var adminname = that.data.adminname;
                         // var realname = event.detail.value.realname;
                         // var contactValue = event.detail.value.contactValue;
-
                         wx.getStorage({
                             key: 'user_id',
                             success: function(ress) {
@@ -1046,7 +1138,9 @@ Page({
                                 var contact = new Contacts();
                                 var Events = Bmob.Object.extend("Events");
                                 var event = new Events();
+                                var contactValue = wx.getStorageSync("my_username");
                                 event.id = optionId;
+                                // console.log(event);
                                 var me = new Bmob.User();
                                 me.id = ress.data;
                                 var pub = new Bmob.User();
@@ -1054,27 +1148,22 @@ Page({
                                 contact.set("publisher", pub);
                                 contact.set("currentUser", me);
                                 contact.set("event", event);
-                                // contact.set("realname", realname);
                                 contact.set("contactWay", contactWay);
-                                contact.set("contactValue", me);
-                                console.log("start to write联系表");
-                                contact.save();
-                                // contact.save(null, {
-                                //     success: function() {
-                                //         // that.setData({
-                                //         //     showDialog: !that.data.showDialog
-                                //         // })
-                                //         console.log("写入联系表成功");
-                                //         that.setData({
-                                //             accountIndex: 2,
-                                //             contactValue: "",
-                                //             realname: ""
-                                //         })
-                                //     },
-                                //     error: function(error) {
-                                //         console.log(error);
-                                //     }
-                                // });
+                                contact.set("contactValue", contactValue);
+
+                                contact.save(null, {
+                                    success: function() {
+                                        console.log("写入联系表成功");
+                                        that.setData({
+                                            accountIndex: 2,
+                                            contactValue: "",
+                                            realname: ""
+                                        })
+                                    },
+                                    error: function(error) {
+                                        console.log(error);
+                                    }
+                                });
 
                                 //加入之后生成消息存在表中，默认未未读
                                 var isme = new Bmob.User();
@@ -1084,17 +1173,17 @@ Page({
                                 var Plyre = Bmob.Object.extend("Plyre");
                                 var plyre = new Plyre();
                                 plyre.set("behavior", 5); //消息通知方式
-                                plyre.set("noticetype", "参加宝宝");
+                                plyre.set("noticetype", "参加物件");
                                 plyre.set("bigtype", 2) //动态大类,消息类
                                 plyre.set("avatar", value); //我的头像
                                 plyre.set("username", my_username); // 我的名称
                                 plyre.set("uid", isme);
-                                plyre.set("wid", optionId); //宝宝ID
+                                plyre.set("wid", optionId); //物件ID
                                 plyre.set("fid", publisherId); //
                                 // console.log("fid=" + publisherId)
                                 plyre.set("is_read", 0); //是否已读,0代表没有,1代表读了
                                 plyre.save();
-                                //将参加的人的消息写入宝宝表中,并更新参加人数
+                                //将参加的人的消息写入物件表中,并更新参加人数
                                 var Diary = Bmob.Object.extend("Events");
                                 var queryLike = new Bmob.Query(Diary);
                                 queryLike.equalTo("objectId", optionId);
@@ -1115,7 +1204,8 @@ Page({
                             success: function(res) {
                                 var openid = res.data;
                                 //获取点击按钮的formId
-                                // var formId = event.detail.formId;
+                                var formId = event.detail.formId;
+                                console.log(formId);
                                 let actid = optionId;
                                 let pubid = publisherId;
                                 var title = that.data.listTitle;
@@ -1125,14 +1215,15 @@ Page({
                                 var adcontactWay = that.data.adcontactWay;
                                 var adcontactValue = that.data.adcontactValue;
                                 var adcontact = adcontactWay + " : " + adcontactValue;
+                                // console.log(formId);
                                 var temp = {
                                     "touser": openid, //这里是填写发送对象的openid
                                     //"touser": currentUser.get("openid"),//这里是填写发送对象的openid
                                     "template_id": "-DZTruLy-RAZNPD6V3Ze6fDaN0c4Kt9LCN1tVesXwkc", //这里填写模板ID，可以在小程序后台配置
                                     "page": "/pages/detail/detail?actid=" + actid + "&pubid=" + pubid, //点击后跳转的页面
-                                    // "page": "",//加入
-                                    //"form_id": formId,//这里填写formid
-                                    "form_id": "",
+                                    // "form_id": formId,//这里填写formid
+                                    // "form_id":formId,
+                                    "form_id": formId,
                                     "data": {
                                         "keyword1": {
                                             "value": title,
@@ -1147,7 +1238,7 @@ Page({
                                             "value": adcontact
                                         },
                                         "keyword5": {
-                                            "value": "您已成功加入寻找,请及时与寻找人联系"
+                                            "value": "您已成功加入我爱,请及时与我爱人联系"
                                         }
                                     },
                                     "emphasis_keyword": ""
@@ -1269,11 +1360,11 @@ Page({
                                 plyre.set("avatar", value); //我的头像
                                 plyre.set("username", my_username); // 我的名称
                                 plyre.set("uid", isme);
-                                plyre.set("wid", optionId); //宝宝ID
+                                plyre.set("wid", optionId); //物件ID
                                 plyre.set("fid", publisherId); //
                                 plyre.set("is_read", 0); //是否已读,0代表没有,1代表读了
                                 plyre.save();
-                                //将取消参加的人的消息写入宝宝表中,并更新参加人数
+                                //将取消参加的人的消息写入物件表中,并更新参加人数
                                 var Diary = Bmob.Object.extend("Events");
                                 var queryLike = new Bmob.Query(Diary);
                                 queryLike.equalTo("objectId", optionId);
@@ -1291,8 +1382,61 @@ Page({
                                     }
                                 })
                             },
+                            fail: function(res) {
+                                console.log(res)
+                            },
                         })
-
+                        //报名成功后发送一条消息给当前用户
+                        wx.getStorage({
+                            key: 'user_openid',
+                            success: function(res) {
+                                var openid = res.data;
+                                //获取点击按钮的formId
+                                var formId = event.detail.formId;
+                                console.log(formId);
+                                let actid = optionId;
+                                let pubid = publisherId;
+                                var title = that.data.listTitle;
+                                // var currentUser = Bmob.User.current();
+                                var address = that.data.address;
+                                var adminname = that.data.adminname;
+                                var adcontactWay = that.data.adcontactWay;
+                                var adcontactValue = that.data.adcontactValue;
+                                var adcontact = adcontactWay + " : " + adcontactValue;
+                                // console.log(formId);
+                                var temp = {
+                                    "touser": openid, //这里是填写发送对象的openid
+                                    //"touser": currentUser.get("openid"),//这里是填写发送对象的openid
+                                    "template_id": "FC66hDSLGm-cOC5xsxS2IEzk1QO3_fanxwVYPMC04a0", //这里填写模板ID，可以在小程序后台配置
+                                    "page": "/pages/detail/detail?actid=" + actid + "&pubid=" + pubid, //点击后跳转的页面
+                                    "form_id": formId,
+                                    "data": {
+                                        "keyword1": {
+                                            "value": title,
+                                        },
+                                        "keyword2": {
+                                            "value": address
+                                        },
+                                        "keyword3": {
+                                            "value": adminname
+                                        },
+                                        // "keyword4": {
+                                        //     "value": adcontact
+                                        // },
+                                        "keyword4": {
+                                            "value": "已取消加入该物件购买"
+                                        }
+                                    },
+                                    "emphasis_keyword": ""
+                                }
+                                Bmob.sendMessage(temp).then(function(obj) {
+                                        console.log('发送成功')
+                                    },
+                                    function(err) {
+                                        common.showTip('失败' + err)
+                                    });
+                            },
+                        })
                         //从用户表中删除加入信息
                         wx.getStorage({
                             key: 'my_username',
@@ -1307,7 +1451,7 @@ Page({
                                                 var joinArray = user.get("eventJoin");
                                                 if (joinArray.length > 0) {
                                                     for (var i = 0; i < joinArray.length; i++) {
-                                                        if (joinArray[i] == optionId) { //如果我已经收藏这个宝宝,再次点击应该是取消收藏
+                                                        if (joinArray[i] == optionId) { //如果我已经收藏这个物件,再次点击应该是取消收藏
                                                             joinArray.splice(i, 1);
                                                             break;
                                                         }
@@ -1358,7 +1502,7 @@ Page({
         });
     },
 
-    //改变寻找状态index
+    //改变我爱状态index
     changeStatus: function(e) {
         this.setData({
             statusIndex: e.detail.value
@@ -1378,7 +1522,7 @@ Page({
         })
     },
 
-    //改变宝宝状态操作
+    //改变物件状态操作
     stuSubmit: function(event) {
         var statusIndex = that.data.statusIndex;
         if (statusIndex == 0) {
@@ -1396,7 +1540,7 @@ Page({
                 result.set("Status", Number(statusIndex));
                 result.set("Statusname", Statusname);
                 result.save();
-                if (Statusname == "已结束") { //如果宝宝状态为已结束，该宝宝将撤离首页
+                if (Statusname == "已结束") { //如果物件状态为已结束，该物件将撤离首页
                     var Events = Bmob.Object.extend("Events");
                     var evnet = new Bmob.Query(Events);
                     evnet.get(optionId, {
@@ -1463,7 +1607,7 @@ Page({
                         plyre.set("avatar", value); //我的头像
                         plyre.set("username", my_username); // 我的名称
                         plyre.set("uid", isme);
-                        plyre.set("wid", optionId); //宝宝ID
+                        plyre.set("wid", optionId); //物件ID
                         plyre.set("fid", publisherId); //
                         console.log("fid=" + publisherId)
                         plyre.set("is_read", 0); //是否已读,0代表没有,1代表读了
@@ -1492,13 +1636,14 @@ Page({
     //点击收藏或取消收藏
     click_favo: function(event) {
         var favo = that.data.favo;
-        if (favo == "3") { //当宝宝是当前用户寻找时
+        console.log(that.data);
+        if (favo == "3") { //当物件是当前用户我爱时
             var Diary = Bmob.Object.extend("Events");
             var query = new Bmob.Query(Diary);
-            if (that.data.actstatus != 2 && that.data.isShow == 1) { //如果当前宝宝未结束且已经在首页展示
+            if (that.data.actstatus != 2 && that.data.isShow == 1) { //如果当前物件未结束且已经在首页展示
                 wx.showModal({
                     title: '是否撤离首页?',
-                    content: '撤离后您的寻找将不会在首页展示',
+                    content: '撤离后您的我爱将不会在首页展示',
                     showCancel: true,
                     success: function(res) {
                         if (res.confirm) {
@@ -1517,10 +1662,10 @@ Page({
                         }
                     }
                 })
-            } else if (that.data.actstatus != 2 && that.data.isShow == 0) { //如果当前宝宝未结束且未在首页展示
+            } else if (that.data.actstatus != 2 && that.data.isShow == 0) { //如果当前物件未结束且未在首页展示
                 wx.showModal({
-                    title: '是否公开寻找?',
-                    content: '公开后您的寻找将会在首页展示',
+                    title: '是否公开我爱?',
+                    content: '公开后您的我爱将会在首页展示',
                     showCancel: true,
                     success: function(res) {
                         if (res.confirm) {
@@ -1540,10 +1685,10 @@ Page({
                     }
                 })
 
-            } else if (that.data.actstatus == 2) { //如果当前宝宝已结束
+            } else if (that.data.actstatus == 2) { //如果当前物件已结束
                 wx.showModal({
                     title: '温馨提示',
-                    content: '已结束的寻找不能公开到首页',
+                    content: '已结束的我爱不能公开到首页',
                 })
                 return;
             }
@@ -1556,7 +1701,7 @@ Page({
                 favo: 0
             })
         }
-        if (favo != "3") { //如果当前用户不是宝宝寻找者
+        if (favo != "3") { //如果当前用户不是物件我爱者
             wx.getStorage({
                 key: 'my_username',
                 success: function(ress) {
@@ -1575,7 +1720,7 @@ Page({
                                     }
                                     if (favoArray.length > 0) {
                                         for (var i = 0; i < favoArray.length; i++) {
-                                            if (favoArray[i] == optionId) { //如果我已经收藏这个宝宝,再次点击应该是取消收藏
+                                            if (favoArray[i] == optionId) { //如果我已经收藏这个物件,再次点击应该是取消收藏
                                                 favoArray.splice(i, 1);
                                                 isFavo = true;
                                                 that.downFavo(user_id); //删除收藏表里的数据
@@ -1584,17 +1729,17 @@ Page({
                                         }
                                         if (isFavo == false) { //如果没有收藏过，点击收藏
                                             favoArray.push(optionId);
-                                            that.upFavo(user_id); //收藏表里添加数据
+                                            that.upFavo(user_id); //有货者表里添加数据
                                         }
                                     } else {
                                         favoArray.push(optionId);
-                                        that.upFavo(user_id); //收藏表里添加数据
+                                        that.upFavo(user_id); //有货者表里添加数据
                                     }
                                     user.set("eventFavo", favoArray);
                                     user.save(null, {
                                         success: function() {
                                             if (isFavo == false) {
-                                                common.dataLoading("已经通知寻找者", "success");
+                                                common.dataLoading("已经通知我爱者", "success");
 
                                                 //报名成功后发送一条消息给当前用户
                                                 wx.getStorage({
@@ -1612,46 +1757,14 @@ Page({
                                                         var adcontactWay = that.data.adcontactWay;
                                                         var adcontactValue = that.data.adcontactValue;
                                                         var adcontact = adcontactWay + " : " + adcontactValue;
-                                                        console.log("openid:=" + openid + ",form_id=" + formId + ",pubid" + publisherId + ",title" + that.data.listTitle + ",adminname=" + that.data.adminname + ",address" + that.data.address + ",adcontactWay=" + that.data.adcontactWay + ",adcontactValue=" + that.data.adcontactValue);
-                                                        //发送模板消息
-                                                        var temp = {
-                                                            "touser": openid, //这里是填写发送对象的openid
-                                                            //"touser": currentUser.get("openid"),//这里是填写发送对象的openid
-                                                            "template_id": "-DZTruLy-RAZNPD6V3Ze6fDaN0c4Kt9LCN1tVesXwkc", //这里填写模板ID，可以在小程序后台配置
-                                                            "page": "/pages/detail/detail?actid=" + actid + "&pubid=" + pubid, //点击后跳转的页面
-                                                            // "page": "",//加入
-                                                            //"form_id": formId,//这里填写formid
-                                                            "form_id": "",
-                                                            "data": {
-                                                                "keyword1": {
-                                                                    "value": title,
-                                                                },
-                                                                "keyword2": {
-                                                                    "value": address
-                                                                },
-                                                                "keyword3": {
-                                                                    "value": adminname
-                                                                },
-                                                                "keyword4": {
-                                                                    "value": adcontact
-                                                                },
-                                                                "keyword5": {
-                                                                    "value": "已经通知选择者"
-                                                                }
-                                                            },
-                                                            "emphasis_keyword": ""
-                                                        }
-                                                        Bmob.sendMessage(temp).then(function(obj) {
-                                                                console.log('发送成功')
-                                                            },
-                                                            function(err) {
-                                                                common.showTip('失败' + err)
-                                                            });
+                                                        // console.log("openid:=" + openid + ",form_id=" + formId + ",pubid" + publisherId + ",title" + that.data.listTitle + ",adminname=" + that.data.adminname + ",address" + that.data.address + ",adcontactWay=" + that.data.adcontactWay + ",adcontactValue=" + that.data.adcontactValue);
+                                                        that.notifyUser(openid, actid, pubid, formId, adminname, title, address, adcontact); //有货者表里添加数据
+
                                                     },
                                                 })
 
                                             } else if (isFavo == true) {
-                                                common.dataLoading("取消收藏成功", "success");
+                                                common.dataLoading("取消有货信息成功", "success");
                                             }
                                         },
                                         error: function(error) {
@@ -1667,26 +1780,106 @@ Page({
         }
     },
     //***************************************************************************** */
+    //Notify user
+    notifyUser: function(openid, actid, pubid, formId, adminname, title, address, adcontact) {
+        //发送模板消息
+        var temp = {
+            "touser": openid, //这里是填写发送对象的openid
+            //"touser": currentUser.get("openid"),//这里是填写发送对象的openid
+            "template_id": "-DZTruLy-RAZNPD6V3Ze6fDaN0c4Kt9LCN1tVesXwkc", //这里填写模板ID，可以在小程序后台配置
+            "page": "/pages/detail/detail?actid=" + actid + "&pubid=" + pubid, //点击后跳转的页面
+            // "page": "",//加入
+            //"form_id": formId,//这里填写formid
+            "form_id": "",
+            "data": {
+                "keyword1": {
+                    "value": title,
+                },
+                "keyword2": {
+                    "value": address
+                },
+                "keyword3": {
+                    "value": adminname
+                },
+                "keyword4": {
+                    "value": adcontact
+                },
+                "keyword5": {
+                    "value": "已经通知选择者"
+                }
+            },
+            "emphasis_keyword": ""
+        }
+        Bmob.sendMessage(temp).then(function(obj) {
+                console.log('发送成功')
+            },
+            function(err) {
+                common.showTip('失败' + err)
+            });
+    },
+    //***************************************************************************** */
     //收藏向Favos 表中添加数据
     upFavo: function(userid) {
         var Favos = Bmob.Object.extend("Favos");
         var favo = new Favos();
         var me = new Bmob.User();
         me.id = userid;
+        var pub = new Bmob.User();
+        pub.id = publisherId;
         var Events = Bmob.Object.extend("Events");
         var event = new Events();
         event.id = optionId;
         favo.set("favor", me);
+        favo.set("publisher", pub);
+        favo.set("currentUser", me);
         favo.set("event", event);
         favo.save(null, {
             success: function() {
-                console.log("写入收藏表成功");
+                console.log("写入有货者表成功");
             },
             error: function(error) {
-                console.log("写入收藏表失败");
+                console.log("写入有货者失败");
                 console.log(error);
             }
         });
+        //加入之后生成消息存在表中，默认未未读
+        // var isme = new Bmob.User();
+        // isme.id = ress.data;
+        wx.getStorage({
+            key: 'user_id',
+            success: function(ress) {
+                var value = wx.getStorageSync("my_avatar")
+                var my_username = wx.getStorageSync("my_username")
+                var Plyre = Bmob.Object.extend("Plyre");
+                var plyre = new Plyre();
+                plyre.set("behavior", 5); //消息通知方式
+                plyre.set("noticetype", "提供物件");
+                plyre.set("bigtype", 2) //动态大类,消息类
+                plyre.set("avatar", value); //我的头像
+                plyre.set("username", my_username); // 我的名称
+                plyre.set("uid", me);
+                plyre.set("wid", optionId); //物件ID
+                plyre.set("fid", publisherId); //
+                // console.log("fid=" + publisherId)
+                plyre.set("is_read", 0); //是否已读,0代表没有,1代表读了
+                plyre.save();
+                //将参加的人的消息写入物件表中,并更新参加人数
+                var Diary = Bmob.Object.extend("Events");
+                var queryLike = new Bmob.Query(Diary);
+                queryLike.equalTo("objectId", optionId);
+                queryLike.find({
+                    success: function(result) {
+                        var providerArray = result[0].get("providerArray");
+                        console.log(providerArray);
+                        console.log("ress" + ress);
+                        providerArray.push(ress.data);
+                        // joinArray.push(ress.data);
+                        result[0].set('providernum', result[0].get('providernum') + 1);
+                        result[0].save();
+                    }
+                })
+            }
+        })
     },
     //取消收藏向 Favos 表中删除数据
     downFavo: function(userid) {
@@ -1711,17 +1904,17 @@ Page({
     },
 
     //-----------------------------------------------------------------------------
-    //删除宝宝
+    //删除物件
     deleteEvent: function() {
         wx.showModal({
-            title: '是否删除该宝宝?',
+            title: '是否删除该物件?',
             content: '删除后将不能恢复',
             showCancel: true,
             confirmColor: "#a07c52",
             cancelColor: "#646464",
             success: function(res) {
                 if (res.confirm) {
-                    //删除此宝宝后返回上一页
+                    //删除此物件后返回上一页
                     var Diary = Bmob.Object.extend("Events");
                     var queryEvent = new Bmob.Query(Diary);
                     queryEvent.get(optionId, {
@@ -1759,6 +1952,21 @@ Page({
 
         this.button = $wuxButton.init('br', {
             position: position,
+            // if (isAdmin===true) {
+            //   buttons: [{
+            //           label: "群二维码",
+            //           icon: "http://bmob-cdn-14867.b0.upaiyun.com/2017/12/02/e049248040b452cd805877235b8b9e0c.png",
+            //       },
+            //       {
+            //           label: "修改信息",
+            //           icon: "http://bmob-cdn-14867.b0.upaiyun.com/2017/12/02/9134d4a24058705f80a61ec82455fe47.png",
+            //       },
+            //       {
+            //           label: "管理员",
+            //           icon: "http://bmob-cdn-14867.b0.upaiyun.com/2017/12/02/9134d4a24058705f80a61ec82455fe47.png",
+            //       },
+            //   ],
+            // } else {
             buttons: [{
                     label: "群二维码",
                     icon: "http://bmob-cdn-14867.b0.upaiyun.com/2017/12/02/e049248040b452cd805877235b8b9e0c.png",
@@ -1768,10 +1976,11 @@ Page({
                     icon: "http://bmob-cdn-14867.b0.upaiyun.com/2017/12/02/9134d4a24058705f80a61ec82455fe47.png",
                 },
             ],
+            // }
             buttonClicked(index, item) {
                 if (index === 0) {
-                    if (that.data.qrcode == null) { //如果该宝宝没有上传群二维码
-                        if (that.data.isMe) { //如果是当前用户的寻找
+                    if (that.data.qrcode == null) { //如果该物件没有上传群二维码
+                        if (that.data.isMe) { //如果是当前用户的我爱
                             wx.showModal({
                                 title: '温馨提示',
                                 content: '您还未上传群二维码，如需上传，请点击修改信息',
@@ -1779,16 +1988,16 @@ Page({
                         } else {
                             wx.showModal({
                                 title: '温馨提示',
-                                content: '该宝宝暂未上传群二维码，您可联系寻找者建群上传',
+                                content: '该物件暂未上传群二维码，您可联系建群上传',
                             })
                         }
-                    } else { //如果该宝宝上传了群二维码
+                    } else { //如果该物件上传了群二维码
                         that.showqrcode();
                     }
                 } else if (index === 1) {
                     let actid = optionId;
                     let pubid = publisherId;
-                    if (that.data.isMe) { //如果是当前用户的寻找
+                    if (that.data.isMe) { //如果是当前用户的我爱
                         wx.navigateTo({
                             url: '/pages/updAct/updAct?actid=' + actid + "&pubid=" + pubid,
                         })
@@ -1826,7 +2035,7 @@ function getContactIndex(name) {
     return accountIndex;
 }
 
-//根据宝宝类型获取宝宝类型名称
+//根据物件类型获取物件类型名称
 function getTypeName(acttype) {
     var acttypeName = "";
     if (acttype == 1) acttypeName = "农产品";
