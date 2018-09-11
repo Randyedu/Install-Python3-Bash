@@ -422,7 +422,7 @@ Page({
                                     var temp = {
                                         "touser": openid, //这里是填写发送对象的openid
                                         "template_id": "b4x0oP6JtSBXsxsiTuTvoh0OfvfsBNyT0FShs52neRE", //这里填写模板ID，可以在小程序后台配置
-                                        "page": "/pages/index/index", //这里填写formid
+                                        "page": "pages/index/index", //这里填写formid
                                         "form_id": formId,
                                         "data": {
                                             "keyword1": {
@@ -438,7 +438,7 @@ Page({
                                                 "value": adcontact
                                             },
                                             "keyword5": {
-                                                "value": "功发布你爱的物件，请耐心等候"
+                                                "value": "成功发布你爱的物件，请耐心等候"
                                             }
                                         },
                                         "emphasis_keyword": ""
