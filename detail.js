@@ -1104,400 +1104,450 @@ Page({
     //现在加入功能
     click_join: function(event) {
         var join = that.data.join;
+        var isMe = that.data.isMe;
+        // console.log("isMe " + isMe);
+        var isJoin = that.data.isJoin;
+        // console.log("isJoin " + isJoin);
         if (that.data.peoplenum > 0 && (that.data.peoplenum - that.data.joinnumber) <= 0) { //如果人加入满了
             wx.showModal({
                 title: '温馨提示',
                 content: '此物件参加人数已满',
                 showCancel: true,
             })
-        } else if (join == "3") { //如果是自己的我爱,弹出改变物件状态的弹窗
-            this.setData({
-                showStuDialog: true
-            });
-        } else if (join == "0") { //如果没有加入，弹出联系表单
-            wx.showModal({
-                title: '温馨提示',
-                content: '确定也加入一起买吗？',
-                showCancel: true,
-                success: function(res) {
-                    if (res.confirm) { //如果点击确认
-                        that.setData({
-                            status: 0
+        } else if (isMe == true) {
+            var statusIndex = that.data.statusIndex;
+            if (statusIndex == 0) {
+                var Statusname = "准备中";
+            } else if (statusIndex == 1) {
+                var Statusname = "进行中";
+            } else if (statusIndex == 2) {
+                var Statusname = "已结束";
+            }
+            var Diary = Bmob.Object.extend("EventMore");
+            var query = new Bmob.Query(Diary);
+
+            query.get(eventMoreId, {
+                success: function(result) {
+                    result.set("Status", Number(statusIndex));
+                    result.set("Statusname", Statusname);
+                    result.save();
+                    if (Statusname == "已结束") { //如果物件状态为已结束，该物件将撤离首页
+                        var Events = Bmob.Object.extend("Events");
+                        var evnet = new Bmob.Query(Events);
+                        evnet.get(optionId, {
+                            success: function(result) {
+                                result.set("isShow", 0);
+                                result.save();
+                                console.log("撤离成功");
+                            },
+                            error: function(object, error) {
+                                console.log("撤离失败" + error);
+                            }
                         });
-                        var join = that.data.join;
-                        var contactindex = that.data.accountIndex;
-                        if (join == "0") { // 未加入，点击加入
+                    }
+                    // that.setData({
+                    //     showStuDialog: false
+                    // })
+                    console.log("改变状态成功");
+                    common.dataLoading("改变成功", "success");
+                },
+                error: function(object, error) {
+                    console.log("改变状态失败" + error);
+                }
+            });
+            that.onShow();
+        } else if (isMe == false) {
+            // else if (join == true) { //如果没有加入，弹出联系表单
+            if (isJoin == false) {
+                wx.showModal({
+                    title: '温馨提示',
+                    content: '确定也加入一起买吗？',
+                    showCancel: true,
+                    success: function(res) {
+                        if (res.confirm) { //如果点击确认
+                            // that.setData({
+                            //     status: 0
+                            // });
+                            // var isJoin = that.data.isJoin;
+                            var join = that.data.join;
+                            var contactindex = that.data.accountIndex;
+                            // if (join == "0") { // 未加入，点击加入
                             that.setData({
+                                isJoin: true,
+                                isFavo: true,
                                 join: 1,
                                 favo: 3 //表示无法提供货物
                             })
-                        } else if (join == "1") { //已加入，点击取消加入
-                            that.setData({
-                                join: 0,
-                                favo: 3 //表示无法提供货物
-                            })
-                        }
-                        if (contactindex == 0) {
-                            var contactWay = "微信号";
-                        } else if (contactindex == 1) {
-                            var contactWay = "QQ号";
-                        } else if (contactindex == 2) {
-                            var contactWay = "手机号";
-                        }
-                        // var adminname = that.data.adminname;
-                        // var realname = event.detail.value.realname;
-                        // var contactValue = event.detail.value.contactValue;
-                        wx.getStorage({
-                            key: 'user_id',
-                            success: function(ress) {
-                                var Contacts = Bmob.Object.extend("Contacts");
-                                var contact = new Contacts();
-                                var Events = Bmob.Object.extend("Events");
-                                var event = new Events();
-                                var contactValue = wx.getStorageSync("my_username");
-                                event.id = optionId;
-                                // console.log(event);
-                                var me = new Bmob.User();
-                                me.id = ress.data;
-                                var pub = new Bmob.User();
-                                pub.id = publisherId;
-                                contact.set("publisher", pub);
-                                contact.set("currentUser", me);
-                                contact.set("event", event);
-                                contact.set("contactWay", contactWay);
-                                contact.set("contactValue", contactValue);
+                            // } else if (join == "1") { //已加入，点击取消加入
+                            //     that.setData({
+                            //         join: 0,
+                            //         favo: 3 //表示无法提供货物
+                            //     })
+                            // }
+                            if (contactindex == 0) {
+                                var contactWay = "微信号";
+                            } else if (contactindex == 1) {
+                                var contactWay = "QQ号";
+                            } else if (contactindex == 2) {
+                                var contactWay = "手机号";
+                            }
+                            // var adminname = that.data.adminname;
+                            // var realname = event.detail.value.realname;
+                            // var contactValue = event.detail.value.contactValue;
+                            wx.getStorage({
+                                key: 'user_id',
+                                success: function(ress) {
+                                    var Contacts = Bmob.Object.extend("Contacts");
+                                    var contact = new Contacts();
+                                    var Events = Bmob.Object.extend("Events");
+                                    var event = new Events();
+                                    var contactValue = wx.getStorageSync("my_username");
+                                    event.id = optionId;
+                                    // console.log(event);
+                                    var me = new Bmob.User();
+                                    me.id = ress.data;
+                                    var pub = new Bmob.User();
+                                    pub.id = publisherId;
+                                    contact.set("publisher", pub);
+                                    contact.set("currentUser", me);
+                                    contact.set("event", event);
+                                    contact.set("contactWay", contactWay);
+                                    contact.set("contactValue", contactValue);
 
-                                contact.save(null, {
-                                    success: function() {
-                                        console.log("写入联系表成功");
-                                        that.setData({
-                                            accountIndex: 2,
-                                            contactValue: "",
-                                            realname: ""
-                                        })
-                                    },
-                                    error: function(error) {
-                                        console.log(error);
-                                    }
-                                });
-
-                                //加入之后生成消息存在表中，默认未未读
-                                var isme = new Bmob.User();
-                                isme.id = ress.data;
-                                var value = wx.getStorageSync("my_avatar")
-                                var my_username = wx.getStorageSync("my_username")
-                                var Plyre = Bmob.Object.extend("Plyre");
-                                var plyre = new Plyre();
-                                plyre.set("behavior", 5); //消息通知方式
-                                plyre.set("noticetype", "参加物件");
-                                plyre.set("bigtype", 2) //动态大类,消息类
-                                plyre.set("avatar", value); //我的头像
-                                plyre.set("username", my_username); // 我的名称
-                                plyre.set("uid", isme);
-                                plyre.set("wid", optionId); //物件ID
-                                plyre.set("fid", publisherId); //
-                                // console.log("fid=" + publisherId)
-                                plyre.set("is_read", 0); //是否已读,0代表没有,1代表读了
-                                plyre.save();
-                                //将参加的人的消息写入物件表中,并更新参加人数
-                                var Diary = Bmob.Object.extend("Events");
-                                var queryLike = new Bmob.Query(Diary);
-                                queryLike.equalTo("objectId", optionId);
-                                queryLike.find({
-                                    success: function(result) {
-                                        var joinArray = result[0].get("joinArray");
-                                        joinArray.push(ress.data);
-                                        result[0].set('joinnumber', result[0].get('joinnumber') + 1);
-                                        result[0].save();
-                                    }
-                                })
-                            },
-                        })
-
-                        //报名成功后发送一条消息给当前用户
-                        wx.getStorage({
-                            key: 'user_openid',
-                            success: function(res) {
-                                var openid = res.data;
-                                //获取点击按钮的formId
-                                var formId = event.detail.formId;
-                                // var formId = 1536636783238;
-                                console.log(formId);
-                                let actid = optionId;
-                                let pubid = publisherId;
-                                var title = that.data.listTitle;
-                                var currentUser = Bmob.User.current();
-                                var address = that.data.address;
-                                var adminname = that.data.adminname;
-                                var adcontactWay = that.data.adcontactWay;
-                                var adcontactValue = that.data.adcontactValue;
-                                var adcontact = adcontactWay + " : " + adcontactValue;
-                                // console.log(formId);
-                                var temp = {
-                                    "touser": openid, //这里是填写发送对象的openid
-                                    //"touser": currentUser.get("openid"),//这里是填写发送对象的openid
-                                    "template_id": "-DZTruLy-RAZNPD6V3Ze6fDaN0c4Kt9LCN1tVesXwkc", //这里填写模板ID，可以在小程序后台配置
-                                    "page": "pages/detail/detail?actid=" + actid + "&pubid=" + pubid, //点击后跳转的页面
-                                    // "form_id": formId,//这里填写formid
-                                    // "form_id":formId,
-                                    "form_id": formId,
-                                    "data": {
-                                        "keyword1": {
-                                            "value": title,
+                                    contact.save(null, {
+                                        success: function() {
+                                            console.log("写入联系表成功");
+                                            that.setData({
+                                                accountIndex: 2,
+                                                contactValue: "",
+                                                realname: ""
+                                            })
                                         },
-                                        "keyword2": {
-                                            "value": address
-                                        },
-                                        "keyword3": {
-                                            "value": adminname
-                                        },
-                                        "keyword4": {
-                                            "value": adcontact
-                                        },
-                                        "keyword5": {
-                                            "value": "您已成功加入我爱,请及时与我爱人联系"
+                                        error: function(error) {
+                                            console.log(error);
                                         }
-                                    },
-                                    "emphasis_keyword": ""
-                                }
-                                Bmob.sendMessage(temp).then(function(obj) {
-                                        console.log(obj)
-                                        console.log('发送成功')
-                                    },
-                                    function(err) {
-                                        common.showTip('失败' + err)
                                     });
-                            },
-                        })
 
-                        wx.getStorage({
-                            key: 'my_username',
-                            success: function(ress) {
-                                var my_username = ress.data;
-                                wx.getStorage({
-                                    key: 'user_openid',
-                                    success: function(res) {
-                                        var openid = res.data;
-                                        var user = Bmob.User.logIn(my_username, openid, {
-                                            success: function(user) {
-                                                var joinArray = user.get("eventJoin");
-                                                var isJoin = false;
-                                                if (joinArray == null) {
-                                                    joinArray = [];
-                                                }
-                                                if (joinArray.length > 0) {
-                                                    for (var i = 0; i < joinArray.length; i++) {
-                                                        if (joinArray[i] == optionId) {
-                                                            joinArray.splice(i, 1);
-                                                            isJoin = true;
-                                                            break;
-                                                        }
+                                    //加入之后生成消息存在表中，默认未未读
+                                    var isme = new Bmob.User();
+                                    isme.id = ress.data;
+                                    var value = wx.getStorageSync("my_avatar")
+                                    var my_username = wx.getStorageSync("my_username")
+                                    var Plyre = Bmob.Object.extend("Plyre");
+                                    var plyre = new Plyre();
+                                    plyre.set("behavior", 5); //消息通知方式
+                                    plyre.set("noticetype", "参加物件");
+                                    plyre.set("bigtype", 2) //动态大类,消息类
+                                    plyre.set("avatar", value); //我的头像
+                                    plyre.set("username", my_username); // 我的名称
+                                    plyre.set("uid", isme);
+                                    plyre.set("wid", optionId); //物件ID
+                                    plyre.set("fid", publisherId); //
+                                    // console.log("fid=" + publisherId)
+                                    plyre.set("is_read", 0); //是否已读,0代表没有,1代表读了
+                                    plyre.save();
+                                    //将参加的人的消息写入物件表中,并更新参加人数
+                                    var Diary = Bmob.Object.extend("Events");
+                                    var queryLike = new Bmob.Query(Diary);
+                                    queryLike.equalTo("objectId", optionId);
+                                    queryLike.find({
+                                        success: function(result) {
+                                            var joinArray = result[0].get("joinArray");
+                                            joinArray.push(ress.data);
+                                            result[0].set('joinnumber', result[0].get('joinnumber') + 1);
+                                            result[0].save();
+                                        }
+                                    })
+                                },
+                            })
+
+                            //报名成功后发送一条消息给当前用户
+                            wx.getStorage({
+                                key: 'user_openid',
+                                success: function(res) {
+                                    var openid = res.data;
+                                    //获取点击按钮的formId
+                                    var formId = event.detail.formId;
+                                    // var formId = 1536636783238;
+                                    // console.log(formId);
+                                    let actid = optionId;
+                                    let pubid = publisherId;
+                                    var title = that.data.listTitle;
+                                    var currentUser = Bmob.User.current();
+                                    var address = that.data.address;
+                                    var adminname = that.data.adminname;
+                                    var adcontactWay = that.data.adcontactWay;
+                                    var adcontactValue = that.data.adcontactValue;
+                                    var adcontact = adcontactWay + " : " + adcontactValue;
+                                    // console.log(formId);
+                                    var temp = {
+                                        "touser": openid, //这里是填写发送对象的openid
+                                        //"touser": currentUser.get("openid"),//这里是填写发送对象的openid
+                                        "template_id": "-DZTruLy-RAZNPD6V3Ze6fDaN0c4Kt9LCN1tVesXwkc", //这里填写模板ID，可以在小程序后台配置
+                                        "page": "pages/detail/detail?actid=" + actid + "&pubid=" + pubid, //点击后跳转的页面
+                                        // "form_id": formId,//这里填写formid
+                                        // "form_id":formId,
+                                        "form_id": formId,
+                                        "data": {
+                                            "keyword1": {
+                                                "value": title,
+                                            },
+                                            "keyword2": {
+                                                "value": address
+                                            },
+                                            "keyword3": {
+                                                "value": adminname
+                                            },
+                                            "keyword4": {
+                                                "value": adcontact
+                                            },
+                                            "keyword5": {
+                                                "value": "您已成功加入我爱,请及时与我爱人联系"
+                                            }
+                                        },
+                                        "emphasis_keyword": ""
+                                    }
+                                    Bmob.sendMessage(temp).then(function(obj) {
+                                            console.log(obj)
+                                            console.log('发送成功')
+                                        },
+                                        function(err) {
+                                            common.showTip('失败' + err)
+                                        });
+                                },
+                            })
+
+                            wx.getStorage({
+                                key: 'my_username',
+                                success: function(ress) {
+                                    var my_username = ress.data;
+                                    wx.getStorage({
+                                        key: 'user_openid',
+                                        success: function(res) {
+                                            var openid = res.data;
+                                            var user = Bmob.User.logIn(my_username, openid, {
+                                                success: function(user) {
+                                                    var joinArray = user.get("eventJoin");
+                                                    var isJoin = false;
+                                                    if (joinArray == null) {
+                                                        joinArray = [];
                                                     }
-                                                    if (isJoin == false) {
+                                                    if (joinArray.length > 0) {
+                                                        for (var i = 0; i < joinArray.length; i++) {
+                                                            if (joinArray[i] == optionId) {
+                                                                joinArray.splice(i, 1);
+                                                                isJoin = true;
+                                                                break;
+                                                            }
+                                                        }
+                                                        if (isJoin == false) {
+                                                            joinArray.push(optionId);
+                                                        }
+                                                    } else {
                                                         joinArray.push(optionId);
                                                     }
-                                                } else {
-                                                    joinArray.push(optionId);
-                                                }
-                                                user.set("eventJoin", joinArray);
-                                                user.save(null, {
-                                                    success: function() {
-                                                        if (isJoin == false) {
+                                                    user.set("eventJoin", joinArray);
+                                                    user.save(null, {
+                                                        success: function() {
+                                                            // if (isJoin == false) {
                                                             common.dataLoading("参加成功", "success");
-                                                        } else if (isJoin == true) {
-                                                            common.dataLoading("取消参加成功", "success");
+                                                            // } else if (isJoin == true) {
+                                                            //     common.dataLoading("取消参加成功", "success");
+                                                            // }
+                                                        },
+                                                        error: function(error) {
+                                                            console.log("参加失败");
                                                         }
-                                                    },
-                                                    error: function(error) {
-                                                        console.log("参加失败");
-                                                    }
-                                                })
-                                                that.onShow();
-                                            }
-                                        });
-                                    },
-                                })
-                            },
-                        })
-                        // } randy
-                        setTimeout(function() {
-                            that.setData({
-                                showTopTips: false
-                            });
-                        }, 1000);
-                    }
-                }
-            })
-        } else if (join == "1") { //如果已经加入，则不弹出表单，点击取消加入（删除有关消息）
-            wx,
-            wx.showModal({
-                title: '温馨提示',
-                content: '确定取消加入吗？',
-                showCancel: true,
-                success: function(res) {
-                    if (res.confirm) { //如果点击确认
-                        that.setData({
-                            status: 0,
-                            favo: 0 //表示无法提供货物
-                        });
-                        //先删除联系表里的数据
-                        wx.getStorage({
-                            key: 'user_id',
-                            success: function(ress) {
-                                var me = new Bmob.User();
-                                me.id = ress.data;
-                                var Events = Bmob.Object.extend("Events");
-                                var event = new Events();
-                                event.id = optionId;
-                                var Diary = Bmob.Object.extend("Contacts");
-                                var query = new Bmob.Query(Diary);
-                                query.equalTo("currentUser", me);
-                                query.equalTo("event", event);
-                                query.destroyAll({
-                                    success: function() {
-                                        //删除成功
-                                        console.log("删除联系表中的数据成功");
-                                        that.setData({
-                                            join: 0,
-                                        })
-                                    },
-                                    error: function(err) {
-                                        console.log("删除联系表中的数据失败");
-                                        // 删除失败
-                                    }
-                                })
-                                //取消加入之后生成消息存在表中，默认未未读
-                                var isme = new Bmob.User();
-                                isme.id = ress.data;
-                                var value = wx.getStorageSync("my_avatar")
-                                var my_username = wx.getStorageSync("my_username")
-                                var Plyre = Bmob.Object.extend("Plyre");
-                                var plyre = new Plyre();
-                                plyre.set("behavior", 6); //消息通知方式
-                                plyre.set("noticetype", "取消参加");
-                                plyre.set("bigtype", 2) //动态大类,消息类
-                                plyre.set("avatar", value); //我的头像
-                                plyre.set("username", my_username); // 我的名称
-                                plyre.set("uid", isme);
-                                plyre.set("wid", optionId); //物件ID
-                                plyre.set("fid", publisherId); //
-                                plyre.set("is_read", 0); //是否已读,0代表没有,1代表读了
-                                plyre.save();
-                                //将取消参加的人的消息写入物件表中,并更新参加人数
-                                var Diary = Bmob.Object.extend("Events");
-                                var queryLike = new Bmob.Query(Diary);
-                                queryLike.equalTo("objectId", optionId);
-                                queryLike.find({
-                                    success: function(result) {
-                                        var joinArray = result[0].get("joinArray");
-                                        for (var i = 0; i < joinArray.length; i++) {
-                                            if (joinArray[i] == ress.data) {
-                                                joinArray.splice(i, 1);
-                                                result[0].set('joinnumber', result[0].get('joinnumber') - 1);
-                                                break;
-                                            }
-                                        }
-                                        result[0].save();
-                                    }
-                                })
-                            },
-                            fail: function(res) {
-                                console.log(res)
-                            },
-                        })
-                        //报名成功后发送一条消息给当前用户
-                        wx.getStorage({
-                            key: 'user_openid',
-                            success: function(res) {
-                                var openid = res.data;
-                                //获取点击按钮的formId
-                                var formId = event.detail.formId;
-                                console.log(formId);
-                                let actid = optionId;
-                                let pubid = publisherId;
-                                var title = that.data.listTitle;
-                                // var currentUser = Bmob.User.current();
-                                var address = that.data.address;
-                                var adminname = that.data.adminname;
-                                var adcontactWay = that.data.adcontactWay;
-                                var adcontactValue = that.data.adcontactValue;
-                                var adcontact = adcontactWay + " : " + adcontactValue;
-                                // console.log(formId);
-                                var temp = {
-                                    "touser": openid, //这里是填写发送对象的openid
-                                    //"touser": currentUser.get("openid"),//这里是填写发送对象的openid
-                                    "template_id": "FC66hDSLGm-cOC5xsxS2IEzk1QO3_fanxwVYPMC04a0", //这里填写模板ID，可以在小程序后台配置
-                                    "page": "pages/detail/detail?actid=" + actid + "&pubid=" + pubid, //点击后跳转的页面
-                                    "form_id": formId,
-                                    "data": {
-                                        "keyword1": {
-                                            "value": title,
-                                        },
-                                        "keyword2": {
-                                            "value": address
-                                        },
-                                        "keyword3": {
-                                            "value": adminname
-                                        },
-                                        // "keyword4": {
-                                        //     "value": adcontact
-                                        // },
-                                        "keyword4": {
-                                            "value": "已取消加入该物件购买"
-                                        }
-                                    },
-                                    "emphasis_keyword": ""
-                                }
-                                Bmob.sendMessage(temp).then(function(obj) {
-                                        console.log(obj)
-                                        console.log('发送成功')
-                                    },
-                                    function(err) {
-                                        common.showTip('失败' + err)
-                                    });
-                            },
-                        })
-                        //从用户表中删除加入信息
-                        wx.getStorage({
-                            key: 'my_username',
-                            success: function(ress) {
-                                var my_username = ress.data;
-                                wx.getStorage({
-                                    key: 'user_openid',
-                                    success: function(res) { //将该文章的Id添加到我的收藏中，或者删除
-                                        var openid = res.data;
-                                        var user = Bmob.User.logIn(my_username, openid, {
-                                            success: function(user) {
-                                                var joinArray = user.get("eventJoin");
-                                                if (joinArray.length > 0) {
-                                                    for (var i = 0; i < joinArray.length; i++) {
-                                                        if (joinArray[i] == optionId) { //如果我已经收藏这个物件,再次点击应该是取消收藏
-                                                            joinArray.splice(i, 1);
-                                                            break;
-                                                        }
-                                                    }
+                                                    })
+                                                    that.onShow();
                                                 }
-                                                user.set("eventJoin", joinArray);
-                                                user.save(null, {
-                                                    success: function() {
-                                                        common.dataLoading("取消参加成功", "success");
-                                                    },
-                                                    error: function(error) {
-                                                        console.log("取消参加失败");
-                                                    }
-                                                })
-                                                that.onShow();
-                                            }
-                                        });
-                                    },
-                                })
-                            },
-                        })
+                                            });
+                                        },
+                                    })
+                                },
+                            })
+                            // } randy
+                            setTimeout(function() {
+                                that.setData({
+                                    showTopTips: false
+                                });
+                            }, 1000);
+                        }
                     }
-                },
-                fail: function(res) {},
-                complete: function(res) {},
-            })
+                })
+            } else if (isJoin == true) { //如果已经加入，则不弹出表单，点击取消加入（删除有关消息）
+
+                wx.showModal({
+                    title: '温馨提示',
+                    content: '确定取消加入吗？',
+                    showCancel: true,
+                    success: function(res) {
+                        if (res.confirm) { //如果点击确认
+                            // that.setData({
+                            //     status: 0,
+                            //     favo: 0 //表示无法提供货物
+                            // });
+
+                            that.setData({
+                                isJoin: false,
+                                isFavo: false
+                                // join: 1,
+                                // favo: 3 //表示无法提供货物
+                            })
+                            //先删除联系表里的数据
+                            wx.getStorage({
+                                key: 'user_id',
+                                success: function(ress) {
+                                    var me = new Bmob.User();
+                                    me.id = ress.data;
+                                    var Events = Bmob.Object.extend("Events");
+                                    var event = new Events();
+                                    event.id = optionId;
+                                    var Diary = Bmob.Object.extend("Contacts");
+                                    var query = new Bmob.Query(Diary);
+                                    query.equalTo("currentUser", me);
+                                    query.equalTo("event", event);
+                                    query.destroyAll({
+                                        success: function() {
+                                            //删除成功
+                                            console.log("删除联系表中的数据成功");
+                                            that.setData({
+                                                join: 0,
+                                            })
+                                        },
+                                        error: function(err) {
+                                            console.log("删除联系表中的数据失败");
+                                            // 删除失败
+                                        }
+                                    })
+                                    //取消加入之后生成消息存在表中，默认未未读
+                                    var isme = new Bmob.User();
+                                    isme.id = ress.data;
+                                    var value = wx.getStorageSync("my_avatar")
+                                    var my_username = wx.getStorageSync("my_username")
+                                    var Plyre = Bmob.Object.extend("Plyre");
+                                    var plyre = new Plyre();
+                                    plyre.set("behavior", 6); //消息通知方式
+                                    plyre.set("noticetype", "取消参加");
+                                    plyre.set("bigtype", 2) //动态大类,消息类
+                                    plyre.set("avatar", value); //我的头像
+                                    plyre.set("username", my_username); // 我的名称
+                                    plyre.set("uid", isme);
+                                    plyre.set("wid", optionId); //物件ID
+                                    plyre.set("fid", publisherId); //
+                                    plyre.set("is_read", 0); //是否已读,0代表没有,1代表读了
+                                    plyre.save();
+                                    //将取消参加的人的消息写入物件表中,并更新参加人数
+                                    var Diary = Bmob.Object.extend("Events");
+                                    var queryLike = new Bmob.Query(Diary);
+                                    queryLike.equalTo("objectId", optionId);
+                                    queryLike.find({
+                                        success: function(result) {
+                                            var joinArray = result[0].get("joinArray");
+                                            for (var i = 0; i < joinArray.length; i++) {
+                                                if (joinArray[i] == ress.data) {
+                                                    joinArray.splice(i, 1);
+                                                    result[0].set('joinnumber', result[0].get('joinnumber') - 1);
+                                                    break;
+                                                }
+                                            }
+                                            result[0].save();
+                                        }
+                                    })
+                                },
+                                fail: function(res) {
+                                    console.log(res)
+                                },
+                            })
+                            //报名成功后发送一条消息给当前用户
+                            wx.getStorage({
+                                key: 'user_openid',
+                                success: function(res) {
+                                    var openid = res.data;
+                                    //获取点击按钮的formId
+                                    var formId = event.detail.formId;
+                                    let actid = optionId;
+                                    let pubid = publisherId;
+                                    var title = that.data.listTitle;
+                                    var address = that.data.address;
+                                    var adminname = that.data.adminname;
+                                    var adcontactWay = that.data.adcontactWay;
+                                    var adcontactValue = that.data.adcontactValue;
+                                    var adcontact = adcontactWay + " : " + adcontactValue;
+                                    // console.log(formId);
+                                    var temp = {
+                                        "touser": openid, //这里是填写发送对象的openid
+                                        //"touser": currentUser.get("openid"),//这里是填写发送对象的openid
+                                        "template_id": "FC66hDSLGm-cOC5xsxS2IEzk1QO3_fanxwVYPMC04a0", //这里填写模板ID，可以在小程序后台配置
+                                        "page": "pages/detail/detail?actid=" + actid + "&pubid=" + pubid, //点击后跳转的页面
+                                        "form_id": formId,
+                                        "data": {
+                                            "keyword1": {
+                                                "value": title,
+                                            },
+                                            "keyword2": {
+                                                "value": address
+                                            },
+                                            "keyword3": {
+                                                "value": adminname
+                                            },
+                                            "keyword4": {
+                                                "value": "已取消加入该物件购买"
+                                            }
+                                        },
+                                        "emphasis_keyword": ""
+                                    }
+                                    Bmob.sendMessage(temp).then(function(obj) {
+                                            console.log(obj)
+                                            console.log('发送成功')
+                                        },
+                                        function(err) {
+                                            common.showTip('失败' + err)
+                                        });
+                                },
+                            })
+                            //从用户表中删除加入信息
+                            wx.getStorage({
+                                key: 'my_username',
+                                success: function(ress) {
+                                    var my_username = ress.data;
+                                    wx.getStorage({
+                                        key: 'user_openid',
+                                        success: function(res) { //将该文章的Id添加到我的收藏中，或者删除
+                                            var openid = res.data;
+                                            var user = Bmob.User.logIn(my_username, openid, {
+                                                success: function(user) {
+                                                    var joinArray = user.get("eventJoin");
+                                                    if (joinArray.length > 0) {
+                                                        for (var i = 0; i < joinArray.length; i++) {
+                                                            if (joinArray[i] == optionId) { //如果我已经收藏这个物件,再次点击应该是取消收藏
+                                                                joinArray.splice(i, 1);
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                    user.set("eventJoin", joinArray);
+                                                    user.save(null, {
+                                                        success: function() {
+                                                            common.dataLoading("取消参加成功", "success");
+                                                        },
+                                                        error: function(error) {
+                                                            console.log("取消参加失败");
+                                                        }
+                                                    })
+                                                    that.onShow();
+                                                }
+                                            });
+                                        },
+                                    })
+                                },
+                            })
+                        }
+                    },
+                    fail: function(res) {},
+                    complete: function(res) {},
+                })
+            }
         }
     },
 
@@ -1543,49 +1593,49 @@ Page({
     },
 
     //改变物件状态操作
-    stuSubmit: function(event) {
-        var statusIndex = that.data.statusIndex;
-        if (statusIndex == 0) {
-            var Statusname = "准备中";
-        } else if (statusIndex == 1) {
-            var Statusname = "进行中";
-        } else if (statusIndex == 2) {
-            var Statusname = "已结束";
-        }
-        var Diary = Bmob.Object.extend("EventMore");
-        var query = new Bmob.Query(Diary);
-
-        query.get(eventMoreId, {
-            success: function(result) {
-                result.set("Status", Number(statusIndex));
-                result.set("Statusname", Statusname);
-                result.save();
-                if (Statusname == "已结束") { //如果物件状态为已结束，该物件将撤离首页
-                    var Events = Bmob.Object.extend("Events");
-                    var evnet = new Bmob.Query(Events);
-                    evnet.get(optionId, {
-                        success: function(result) {
-                            result.set("isShow", 0);
-                            result.save();
-                            console.log("撤离成功");
-                        },
-                        error: function(object, error) {
-                            console.log("撤离失败" + error);
-                        }
-                    });
-                }
-                that.setData({
-                    showStuDialog: false
-                })
-                console.log("改变状态成功");
-                common.dataLoading("改变成功", "success");
-            },
-            error: function(object, error) {
-                console.log("改变状态失败" + error);
-            }
-        });
-        that.onShow();
-    },
+    // stuSubmit: function(event) {
+    //   var statusIndex = that.data.statusIndex;
+    //   if (statusIndex == 0) {
+    //       var Statusname = "准备中";
+    //   } else if (statusIndex == 1) {
+    //       var Statusname = "进行中";
+    //   } else if (statusIndex == 2) {
+    //       var Statusname = "已结束";
+    //   }
+    //   var Diary = Bmob.Object.extend("EventMore");
+    //   var query = new Bmob.Query(Diary);
+    //
+    //   query.get(eventMoreId, {
+    //       success: function(result) {
+    //           result.set("Status", Number(statusIndex));
+    //           result.set("Statusname", Statusname);
+    //           result.save();
+    //           if (Statusname == "已结束") { //如果物件状态为已结束，该物件将撤离首页
+    //               var Events = Bmob.Object.extend("Events");
+    //               var evnet = new Bmob.Query(Events);
+    //               evnet.get(optionId, {
+    //                   success: function(result) {
+    //                       result.set("isShow", 0);
+    //                       result.save();
+    //                       console.log("撤离成功");
+    //                   },
+    //                   error: function(object, error) {
+    //                       console.log("撤离失败" + error);
+    //                   }
+    //               });
+    //           }
+    //           that.setData({
+    //               showStuDialog: false
+    //           })
+    //           console.log("改变状态成功");
+    //           common.dataLoading("改变成功", "success");
+    //       },
+    //       error: function(object, error) {
+    //           console.log("改变状态失败" + error);
+    //       }
+    //   });
+    //   that.onShow();
+    // },
 
 
     //修改联系信息操作
@@ -1652,9 +1702,12 @@ Page({
     //点击收藏或取消收藏
     click_favo: function(event) {
         var favo = that.data.favo;
+        var isMe = that.data.isMe;
+        console.log("isMe " + isMe);
         var isFavo = that.data.isFavo;
-        // console.log(that.data);
-        if (favo == "3") { //当物件是当前用户我爱时
+        console.log("isFavo " + isFavo);
+        // if (favo == "3") { //当物件是当前用户我爱时
+        if (isMe == true) { //当物件是当前用户我爱时
             var Diary = Bmob.Object.extend("Events");
             var query = new Bmob.Query(Diary);
             if (that.data.actstatus != 2 && that.data.isShow == 1) { //如果当前物件未结束且已经在首页展示
@@ -1709,18 +1762,19 @@ Page({
                 })
                 return;
             }
-        } else if (favo == "0") {
-            that.setData({
-                favo: 1,
-                join: 0 //表示可以加入
-            })
-        } else if (favo == "1") {
-            that.setData({
-                favo: 0,
-                join: 1 //表示无法加入
-            })
-        }
-        if (favo != "3") { //如果当前用户不是物件我爱者
+        } else if (isMe == false) { //如果当前用户不是物件我爱者
+            //  else if (favo == "0") {
+            //     that.setData({
+            //         favo: 1,
+            //         join: 0 //表示可以加入
+            //     })
+            // } else if (favo == "1") {
+            //     that.setData({
+            //         favo: 0,
+            //         join: 1 //表示无法加入
+            //     })
+            // }
+            // if (favo != "3") { //如果当前用户不是物件我爱者
             if (isFavo == false) {
                 wx.showModal({
                     title: '是否有货可以提供?',
@@ -1812,8 +1866,10 @@ Page({
                                                                     common.showTip('失败' + err)
                                                                 });
                                                             that.setData({
-                                                                isFavo: true
+                                                                isFavo: true,
+                                                                isJoin: false
                                                             });
+                                                            that.onShow();
                                                             // console.log("openid:=" + openid + ",form_id=" + formId + ",pubid" + publisherId + ",title" + that.data.listTitle + ",adminname=" + that.data.adminname + ",address" + that.data.address + ",adcontactWay=" + that.data.adcontactWay + ",adcontactValue=" + that.data.adcontactValue);
                                                             // that.notifyUser(openid, actid, pubid, formId, adminname, title, address, adcontact); //有货者表里添加数据
                                                         },
@@ -1835,7 +1891,7 @@ Page({
                         }
                     }
                 })
-            } else {
+            } else if (isFavo == true) {
                 // favo already click
                 wx.showModal({
                     title: '请先确认',
@@ -1868,15 +1924,7 @@ Page({
                                                                 break;
                                                             }
                                                         }
-                                                        // if (isFavo == false) { //如果没有收藏过，点击收藏
-                                                        //     favoArray.push(optionId);
-                                                        //     that.upFavo(user_id); //有货者表里添加数据
-                                                        // }
                                                     }
-                                                    // else {
-                                                    //     favoArray.push(optionId);
-                                                    //     that.upFavo(user_id); //有货者表里添加数据
-                                                    // }
                                                     user.set("eventFavo", favoArray);
                                                     user.save(null, {
                                                         success: function() {
@@ -1934,6 +1982,7 @@ Page({
                                                             that.setData({
                                                                 isFavo: false
                                                             });
+                                                            that.onShow();
                                                         },
                                                         error: function(error) {
                                                             console.log("失败");
@@ -2101,7 +2150,7 @@ Page({
                         var providerArray = result[0].get("providerArray");
                         // var providernum = result[0].get("providernum");
                         providerArray.push(me.id);
-                        result[0].set('providernum', result[0].get("providernum") + 1);
+                        result[0].set('providernum', result[0].get("providernum") - 1);
                         result[0].save();
                     }
                 })
