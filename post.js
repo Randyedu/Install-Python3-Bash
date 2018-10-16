@@ -1,554 +1,875 @@
-//获取应用实例
-var app = getApp()
+import * as echarts from '../../ec-canvas/echarts';
 var Bmob = require("../../utils/bmob.js");
-var common = require('../template/getCode.js');
-const QQMapWX = require('../../utils/qqmap-wx-jssdk.js');
-var that;
-var myDate = new Date();
-//格式化日期
-function formate_data(myDate) {
-    let month_add = myDate.getMonth() + 1;
-    var formate_result = myDate.getFullYear() + '-' +
-        month_add + '-' +
-        myDate.getDate()
-    return formate_result;
-}
+const app = getApp();
+var sliderWidth = 96; // 需要设置slider的宽度，用于计算中间位置
+var lineChart = null;
+var pieChart = null;
+var line1Chart = null;
+var widthL;
+var heightL;
+var luckydate = [];
+var luckysequence = [];
+var luckycount = [];
+var luckycount1 = [];
+var luckyserier = [];
+var luckynumber = [];
+var luckynum1 = [];
+var luckynum2 = [];
+var luckynum3 = [];
+var luckynum4 = [];
+var luckynum5 = [];
+var luckynum6 = [];
+var luckyprofit = [];
+var luckypro1 = [];
+var luckypro2 = [];
+var luckypro3 = [];
+var luckypro4 = [];
+var luckypro5 = [];
+var luckypro6 = [];
+var luckyInform = [];
+//获取应用实例
+var a = -1;
+var b = -1;
+var c = -1;
+var d = -1;
+var states = 0;
 Page({
-    /**
-     * 页面的初始数据
-     */
-    data: {
-        notice_status: false,
-        accounts: ["微信号", "QQ号", "手机号"],
-        accountIndex: 0,
-        peopleHide: false,
-        isAgree: false,
-        date: formate_data(myDate),
-        address: '点击选择位置',
-        longitude: 0, //经度
-        latitude: 0, //纬度
-        showTopTips: false,
-        TopTips: '',
-        noteMaxLen: 200, //备注最多字数
-        content: "",
-        noteNowLen: 0, //备注当前字数
-        types: ["农产品", "手工品", "家用品", "闲置", "书籍", "出行", "电影", "音乐", "其他"],
-        typeIndex: "0",
-        showInput: false, //显示输入真实姓名,
-    },
+	data: {
+		ecLine: {
+			onInit: initlineChart
+		},
+		ecPie: {
+			onInit: initline1Chart
+		},
+		direction: {
+			onInit: initpieChart
+		},
+		list1: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+		list2: [11, 12, 13, 14, 15, 16, 17, 18, 19],
+		list3: [21, 22, 23, 24, 25, 26, 27, 28, 29],
+		list4: [31, 32, 33, 34, 35, 36, 37, 38, 39],
+		list5: [41, 42, 43, 44, 45, 46, 47, 48, 49],
+		tabs: ["一", "二", "三", "四", "五", "六", "特"],
+		tabs1: ["十", "半百", "百", "月", "季", "半", "年"],
+		activeIndex: 1,
+		activeIndex1: 1,
+		//sliderOffset: 0,
+		luckydate: [],
+		luckysequence: [],
+		luckynumber: [],
+		luckynum1: [],
+		luckynum2: [],
+		luckynum3: [],
+		luckynum4: [],
+		luckynum5: [],
+		luckynum6: [],
+		luckyprofit: [],
+		luckypro1: [],
+		luckypro2: [],
+		luckypro3: [],
+		luckypro4: [],
+		luckypro5: [],
+		luckypro6: [],
+		luckyserier: [],
+		luckycount: [],
+		luckycount1: [],
+		luckybig: 0,
+		luckysml1: 0,
+		luckysml2: 0,
+		luckysml3: 0,
+		luckysml4: 0,
+		luckysml5: 0,
+		luckysml6: 0,
+		luckyday: 0,
+		luckyseq: 0,
+		states: 0,
+		sliderLeft: 0
+	},
 
-    tapNotice: function(e) {
-        if (e.target.id == 'notice') {
-            this.hideNotice();
-        }
-    },
-    showNotice: function(e) {
-        this.setData({
-            'notice_status': true
-        });
-    },
-    hideNotice: function(e) {
-        this.setData({
-            'notice_status': false
-        });
-    },
+	onReady() {
+		//setTimeout(this.getData, 500);
+	},
+	onLoad: function () {
+		//get and load the whole year data
+		this.getData("年");
+	},
+	periodChange1: function (e) {
+		//console.log("periodChange " + e.detail.value);
+		this.setData({
+			activeIndex: e.currentTarget.id
+		});
+		this.getChart(e.detail.value);
+	},
+	periodChange: function (e) {
+		//console.log("periodChange " + e.detail.value);
+		this.setData({
+			activeIndex: e.currentTarget.id
+		});
+		this.getData(e.detail.value);
+	},
+	numberChange: function (e) {
+		//console.log("numberChange " + e.detail.value);
+		this.setData({
+			activeIndex1: e.currentTarget.id
+		});
 
+		this.loadData(e.detail.value);
+	},
+	numberPick1: function (e) {
+		var list = this.data.list1;
+		this.loadChart(list[e.detail.value]);
+	},
+	numberPick2: function (e) {
+		var list = this.data.list2;
+		this.loadChart(list[e.detail.value]);
+	},
+	numberPick3: function (e) {
+		var list = this.data.list3;
+		this.loadChart(list[e.detail.value]);
+	},
+	numberPick4: function (e) {
+		var list = this.data.list4;
+		this.loadChart(list[e.detail.value]);
+	},
+	numberPick5: function (e) {
+		var num = e.target.dataset.num;
+		console.log(num);
+		var list = this.data.list5;
+		this.loadChart(list[e.detail.value]);
+	},
+	//getData方法里发送ajax
+	getData(type) {
+		var limitrow = 0;
+		if (type == "年") {
+			limitrow = 155;
+		} else if (type == "半百") {
+			limitrow = 50;
+		} else if (type == "十") {
+			limitrow = 10;
+		} else if (type == "月") {
+			limitrow = 15;
+		} else if (type == "季") {
+			limitrow = 45;
+		} else if (type == "半") {
+			limitrow = 78;
+		};
+		var queryJoin = new Bmob.Query("marksix");
+		queryJoin.order("-luckydate");
+		queryJoin.limit(limitrow);
+		queryJoin.find().then(result => {
+			var j = 0;
+			var reresult = [];
+			for (var i = result.length - 1; i >= 0; i--) {
+				reresult[j] = result[i];
+				j++;
+			};
+			this.getProfit(reresult);
+			this.getStrLucky(reresult);
+			this.loadData("特");
+		});
+	},
+	//getData方法里发送ajax
+	getChart(type) {
+		var limitrow = 0;
+		if (type == "年") {
+			limitrow = 155;
+		} else if (type == "半百") {
+			limitrow = 50;
+		} else if (type == "十") {
+			limitrow = 10;
+		} else if (type == "月") {
+			limitrow = 15;
+		} else if (type == "季") {
+			limitrow = 45;
+		} else if (type == "半") {
+			limitrow = 78;
+		};
+		var queryJoin = new Bmob.Query("marksix");
+		queryJoin.order("-luckydate");
+		queryJoin.limit(limitrow);
+		queryJoin.find().then(result => {
+			var j = 0;
+			var reresult = [];
+			for (var i = result.length - 1; i >= 0; i--) {
+				reresult[j] = result[i];
+				j++;
+			};
+			this.getAllProfit(reresult);
+			this.loadchart("特");
+		});
+	},
+	loadChart(luckynumber) {
+		var id = luckynumber;
+		console.log(id);
+		wx.showLoading({
+			title: '加载中...',
+		});
+		var luckynumber = this.data.luckynumber;
+		var luckynumber1 = this.data.luckynumber;
+		for (var i = 0; i < luckynumber1.length; i++) {
+			if (luckynumber1[i] != id) {
+				luckynumber1[i] = 0;
+			}
+		}
+		var luckycount = this.data.luckycount;
+		var title = "特码";
+		var luckyprofit = this.data.luckyprofit;
+		//lucknumber = this.data.luckysml6;
+		var luckyserier = this.data.luckyserier;
+		var luckydate = this.data.luckydate;
 
-    //字数改变触发事件
-    bindTextAreaChange: function(e) {
-        var that = this
-        var value = e.detail.value,
-            len = parseInt(value.length);
-        if (len > that.data.noteMaxLen)
-            return;
-        that.setData({
-            content: value,
-            noteNowLen: len
-        })
-    },
+		// Update the first line chart
+		var lineop = {
+			title: {
+				text: title + '号码走势',
+			},
+			xAxis: {
+				data: luckydate,
+			},
+			series: [{
+					type: 'bar',
+					data: luckynumber1,
+				}
+			]
+		};
 
-    /**
-     * 生命周期函数--监听页面加载
-     */
-    onLoad: function(options) {
-        that = this;
+		lineChart.setOption(lineop);
+		// Update the second line chart
+		var line1op = {
+			title: {
+				text: title + id + "运势"
+			},
+			xAxis: {
+				data: luckydate,
+			},
+			series: [{
+					data: luckyprofit
+				}
+			]
+		};
 
-        that.setData({ //初始化数据
-            src: "",
-            isSrc: false,
-            ishide: "0",
-            autoFocus: true,
-            isLoading: false,
-            loading: true,
-            isdisabled: false
-        })
+		line1Chart.setOption(line1op);
 
-        // 自己位置初始化
-        // 实例化腾讯地图API核心类
-        const qqmapsdk = new QQMapWX({
-            key: 'TCCBZ-XUICJ-A6PFE-KL5IQ-PV4E6-BXF6P' // 必填
-        });
-        // console.log(qqmapsdk);
-        // 查看位置
-        wx.getLocation({
-            type: 'wgs84', // 返回可以用于wx.openLocation的经纬度
-            success: function(res) {
-                // console.log("getLocation res: ", res);
-                // 根据坐标获取当前位置名称，显示在顶部:腾讯地图逆地址解析
-                // console.log(qqmapsdk.reverseGeocoder);
-                qqmapsdk.reverseGeocoder({
-                    location: {
-                        latitude: res.latitude,
-                        longitude: res.longitude
-                    },
-                    success: function(addressRes) {
-                        const address = addressRes.result.formatted_addresses.recommend;
-                        const {
-                            lat: latitude,
-                            lng: longitude
-                        } = addressRes.result.location;
-                        // console.log(address);
-                        that.setData({
-                            address: address,
-                            longitude: longitude, //经度
-                            latitude: latitude //纬度
-                        })
-                    }
-                })
-            },
-        });
-    },
+		//update the 3rd chart
+		var pieop = {
+			title: {
+				text: title + "热度(出现次数)"
+			},
+			xAxis: [{
+					data: luckyserier,
+				}
+			],
+			series: [{
+					data: luckycount
+				}
+			]
+		};
 
-    /**
-     * 生命周期函数--监听页面初次渲染完成
-     */
-    onReady: function() {
-        wx.hideToast()
-    },
+		pieChart.setOption(pieop);
+		wx.hideLoading();
+	},
+	loadData(ma_type) {
+		var id = ma_type;
+		wx.showLoading({
+			title: '加载中...',
+		});
+		var title = "";
+		var lucknumber = 0;
+		if (id == "特") {
+			var luckynumber = this.data.luckynumber;
+			var luckycount = this.data.luckycount;
+			title = "特码";
+			lucknumber = this.data.luckybig;
+			var luckyprofit = this.data.luckyprofit;
+		} else if (id == "一") {
+			var luckynumber = this.data.luckynum1;
+			var luckycount = this.data.luckycount1;
+			title = "正一码";
+			lucknumber = this.data.luckysml1;
+			var luckyprofit = this.data.luckypro1;
+		} else if (id == "二") {
+			var luckynumber = this.data.luckynum2;
+			var luckycount = this.data.luckycount1;
+			title = "正二码";
+			lucknumber = this.data.luckysml2;
+			var luckyprofit = this.data.luckypro2;
+		} else if (id == "三") {
+			var luckynumber = this.data.luckynum3;
+			var luckycount = this.data.luckycount1;
+			title = "正三码";
+			lucknumber = this.data.luckysml3;
+			var luckyprofit = this.data.luckypro3;
+		} else if (id == "四") {
+			var luckynumber = this.data.luckynum4;
+			var luckycount = this.data.luckycount1;
+			title = "正四码";
+			var luckyprofit = this.data.luckypro4;
+			lucknumber = this.data.luckysml4;
+		} else if (id == "五") {
+			var luckynumber = this.data.luckynum5;
+			var luckycount = this.data.luckycount1;
+			title = "正五码";
+			var luckyprofit = this.data.luckypro5;
+			lucknumber = this.data.luckysml5;
+		} else if (id == "六") {
+			var luckynumber = this.data.luckynum6;
+			var luckycount = this.data.luckycount1;
+			title = "正六码";
+			var luckyprofit = this.data.luckypro6;
+			lucknumber = this.data.luckysml6;
+		};
+		var luckyserier = this.data.luckyserier;
+		var luckydate = this.data.luckydate;
+		// Update the first line chart
+		var lineop = {
+			title: {
+				text: title + '号码走势',
+			},
+			xAxis: {
+				data: luckydate,
+			},
+			series: [{
+					data: luckynumber,
+				}
+			]
+		};
 
-    /**
-     * 生命周期函数--监听页面显示
-     */
-    onShow: function() {
-        var myInterval = setInterval(getReturn, 500); ////半秒定时查询
-        function getReturn() {
-            wx.getStorage({
-                key: 'user_openid',
-                success: function(ress) {
-                    if (ress.data) {
-                        clearInterval(myInterval)
-                        that.setData({
-                            loading: true
-                        })
-                    }
-                }
-            })
-        }
-    },
+		lineChart.setOption(lineop);
+		// Update the second line chart
+		var line1op = {
+			title: {
+				text: title + lucknumber + "运势"
+			},
+			xAxis: {
+				data: luckydate,
+			},
+			series: [{
+					data: luckyprofit
+				}
+			]
+		};
 
-    //上传物件图片
-    uploadPic: function() { //选择图标
-        wx.chooseImage({
-            count: 1, // 默认9
-            sizeType: ['compressed'], //压缩图
-            sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
-            success: function(res) {
-                // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片
-                var tempFilePaths = res.tempFilePaths
-                that.setData({
-                    isSrc: true,
-                    src: tempFilePaths
-                })
-            }
-        })
-    },
+		line1Chart.setOption(line1op);
 
-    //删除图片
-    clearPic: function() { //删除图片
-        that.setData({
-            isSrc: false,
-            src: ""
-        })
-    },
+		//update the 3rd chart
+		var pieop = {
+			title: {
+				text: title + "热度(出现次数)"
+			},
+			xAxis: [{
+					data: luckyserier,
+				}
+			],
+			series: [{
+					data: luckycount
+				}
+			]
+		};
 
-    //上传物件群二维码
-    uploadCodePic: function() { //选择图标
-        wx.chooseImage({
-            count: 1, // 默认9
-            sizeType: ['compressed'], //压缩图
-            sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
-            success: function(res) {
-                // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片
-                var tempFilePaths = res.tempFilePaths
-                that.setData({
-                    isCodeSrc: true,
-                    codeSrc: tempFilePaths
-                })
-            }
-        })
-    },
+		pieChart.setOption(pieop);
+		wx.hideLoading();
+	},
+	changeBoxBtn: function (e) {
 
-    //删除物件群二维码
-    clearCodePic: function() {
-        that.setData({
-            isCodeSrc: false,
-            codeSrc: ""
-        })
-    },
+		var num = e.target.dataset.num;
+		var states = 0;
+		if (num == 0) {
+			states = 0;
+			a += 1;
+			b = -1;
+			c = -1;
+			d = -1;
+			if (a % 2 == 1) {
+				states = 6;
+			};
+			this.setData({
+				tabs: ["一", "二", "三", "四", "五", "六", "特"],
+			})
 
-    //限制人数
-    switch1Change: function(e) {
-        if (e.detail.value == false) {
-            this.setData({
-                peopleHide: false
-            })
-        } else if (e.detail.value == true) {
-            this.setData({
-                peopleHide: true
-            })
-        }
-    },
+			this.loadData("特");
+		} else if (num == 1) {
+			states = 1;
+			a = -1;
+			b += 1;
+			c = -1;
+			d = -1;
+			if (b % 2 == 1) {
+				states = 6;
+			}
+			this.setData({
+				tabs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+			});
+			wx.showToast({
+				title: '功能在开发之中',
+				icon: 'success'
+			});
+		} else if (num == 2) {
+			states = 2;
+			a = -1;
+			b = -1;
+			c += 1;
+			d = -1;
+			if (c % 2 == 1) {
+				states = 6;
+			}
 
-    //改变时间
-    bindDateChange: function(e) {
-        this.setData({
-            date: e.detail.value
-        })
-    },
-    //改变物件类别
-    bindTypeChange: function(e) {
-        this.setData({
-            typeIndex: e.detail.value
-        })
-    },
-    //选择地点
-    addressChange: function(e) {
-        this.addressChoose(e);
-    },
-    addressChoose: function(e) {
-        var that = this;
-        wx.chooseLocation({
-            success: function(res) {
-                that.setData({
-                    address: res.name,
-                    longitude: res.longitude, //经度
-                    latitude: res.latitude, //纬度
-                })
-                if (e.detail && e.detail.value) {
-                    this.data.address = e.detail.value;
-                }
-            },
-            fail: function(e) {},
-            complete: function(e) {}
-        })
-    },
+		} else if (num == 3) {
+			states = 3;
+			a = -1;
+			b = -1;
+			c = -1;
+			d += 1;
+			if (d % 2 == 1) {
+				states = 6;
+			}
+			wx.showToast({
+				title: '功能在开发之中',
+				icon: 'success'
+			});
+		}
+		//console.log(states)
+		this.setData({
+			states: states
+		})
+	},
+	onShareAppMessage: function (res) {
+		wx.showShareMenu({
+			withShareTicket: true
+		})
+		if (res.from == 'button') {
+			//console.log(res.target)
+		}
 
-    //改变联系方式
-    bindAccountChange: function(e) {
-        this.setData({
-            accountIndex: e.detail.value
-        })
-    },
+		return {
+			title: "六合神剑",
+			path: '/pages/mychart/mychart',
+			//imageUrl: this.data.istPic,
+			success: function (res) {
+				wx.getShareInfo({
+					shareTicket: res.shareTickets,
+					success(res) {
+						wx.Bmob.User.decryption(res).then(res => {
+							console.log(res);
+						})
+						// 转发成功
+						wx.showToast({
+							title: '转发成功',
+							icon: 'success'
+						});
+					}
+				})
 
-    //同意相关条例
-    bindAgreeChange: function(e) {
-        this.setData({
-            isAgree: !!e.detail.value.length,
-            // showInput: !this.data.showInput
-        });
-    },
+			},
+			fail: function (res) {
+				// 转发失败
+				wx.showToast({
+					title: '转发失败',
+					icon: 'fail'
+				});
+			}
+		}
+	},
+	getStrLucky: function (result) {
+		//console.log(result);
+		var current = result.length - 1;
+		var luckyday = result[current].luckydate;
+		var luckyseq = result[current].luckysequence;
+		var luckybig = result[current].luckynumber;
+		var luckysml1 = result[current].luckynum1;
+		var luckysml2 = result[current].luckynum2;
+		var luckysml3 = result[current].luckynum3;
+		var luckysml4 = result[current].luckynum4;
+		var luckysml5 = result[current].luckynum5;
+		var luckysml6 = result[current].luckynum6;
+		this.setData({
+			luckyday: luckyday,
+			luckyseq: luckyseq,
+			luckybig: luckybig,
+			luckysml1: luckysml1,
+			luckysml2: luckysml2,
+			luckysml3: luckysml3,
+			luckysml4: luckysml4,
+			luckysml5: luckysml5,
+			luckysml6: luckysml6,
+		});
+	},
+	getAllProfit: function (result) {
+		// lucky history arrays
+		var luckydate = [];
+		var luckysequence = [];
+		var luckynumber = [];
+		var luckynum1 = [];
+		var luckynum2 = [];
+		var luckynum3 = [];
+		var luckynum4 = [];
+		var luckynum5 = [];
+		var luckynum6 = [];
+		// lucky profits arrays
+		var allluckyprofit = [];
+		var allluckycount = [];
+		var luckyserier = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49];
+		var profit = [];
+		for (var i = 0; i < result.length; i++) {
+			luckydate.push(result[i].luckydate);
+			luckysequence.push(result[i].luckysequence);
+			luckynumber.push(result[i].luckynumber);
+			luckynum1.push(result[i].luckynum1);
+			luckynum2.push(result[i].luckynum2);
+			luckynum3.push(result[i].luckynum3);
+			luckynum4.push(result[i].luckynum4);
+			luckynum5.push(result[i].luckynum5);
+			luckynum6.push(result[i].luckynum6);
 
-    //表单验证
-    showTopTips: function() {
-        var that = this;
-        this.setData({
-            showTopTips: true
-        });
-        setTimeout(function() {
-            that.setData({
-                showTopTips: false
-            });
-        }, 3000);
-    },
-    //提交表单
-    submitForm: function(e) {
-        var that = this;
+			for (var j = 0; j < 50; j++) {
+				if (result[i].luckynumber = j) {
+					profit[j] = profit[j] + 42;
+				} else {
+					profit[j] = profit[j] - 1;
+				};
+				allluckyprofit[j].push(profit[j]);
+			};
 
-        var title = e.detail.value.title;
-        var endtime = this.data.date;
-        var typeIndex = this.data.typeIndex;
-        var acttype = 1 + parseInt(typeIndex);
-        var acttypename = getTypeName(acttype); //获得类型名称
-        var address = this.data.address;
-        var longitude = this.data.longitude; //经度
-        var latitude = this.data.latitude; //纬度
-        var switchHide = e.detail.value.switchHide;
-        var peoplenum = e.detail.value.peoplenum;
-        // console.log(e.detail);
-        var content = e.detail.value.content;
-        //------发布者真实信息------
-        var realname = e.detail.value.realname;
-        var contactindex = this.data.accountIndex;
-        if (contactindex == 0) {
-            var contactWay = "微信号";
-        } else if (contactindex == 1) {
-            var contactWay = "QQ号";
-        } else if (contactindex == 2) {
-            var contactWay = "手机号";
-        }
-        var contactValue = e.detail.value.contactValue;
-        //先进行表单非空验证
-        if (title == "") {
-            this.setData({
-                showTopTips: true,
-                TopTips: '请输入物件名称'
-            });
-        } else if (content == "") {
-            this.setData({
-                showTopTips: true,
-                TopTips: '我爱香港种番薯10斤，联系电话13688889999'
-            });
-        } else {
-            console.log('校验完毕');
-            // console.log(contactValue);
-            that.setData({
-                isLoading: true,
-                isdisabled: true
-            })
-            //向 Events 表中新增一条数据
-            wx.getStorage({
-                key: 'user_id',
-                success: function(ress) {
-                    var Diary = Bmob.Object.extend("Events");
-                    var diary = new Diary();
-                    var me = new Bmob.User();
-                    me.id = ress.data;
-                    diary.set("title", title);
-                    diary.set("endtime", endtime);
-                    diary.set("acttype", acttype + "");
-                    diary.set("isShow", 1);
-                    diary.set("address", address);
-                    diary.set("longitude", longitude); //经度
-                    diary.set("latitude", latitude); //纬度\
-                    if (that.data.peopleHide) { //如果设置了人数
-                        diary.set("peoplenum", peoplenum);
-                    } else if (!that.data.peopleHide) {
-                        diary.set("peoplenum", "-1");
-                    }
-                    diary.set("content", content);
-                    diary.set("publisher", me);
-                    diary.set("likenum", 0);
-                    diary.set("commentnum", 0);
-                    diary.set("liker", []);
-                    diary.set("joinnumber", 0); //发布后初始加入人数为0
-                    diary.set("joinArray", []);
-                    diary.set("providernum", 0); //发布后初始有货人数为0
-                    diary.set("providerArray", []);
-                    if (that.data.isSrc == true) {
-                        var name = that.data.src; //上传图片的别名
-                        var file = new Bmob.File(name, that.data.src);
-                        file.save();
-                        diary.set("actpic", file);
-                    }
-                    //新增操作
-                    diary.save(null, {
-                        success: function(result) {
-                            //物件扩展表中添加一条记录
-                            var Diary = Bmob.Object.extend("EventMore");
-                            var query = new Diary();
-                            var Events = Bmob.Object.extend("Events");
-                            var event = new Events();
-                            event.id = result.id;
-                            query.set("Status", 0);
-                            query.set("Statusname", "进行中");
-                            query.set("event", event);
-                            //如果上传了群二维码
-                            if (that.data.isCodeSrc == true) {
-                                var name = that.data.codeSrc; //上传图片的别名
-                                var file = new Bmob.File(name, that.data.codeSrc);
-                                file.save();
-                                query.set("qrcode", file);
-                            }
-                            query.save();
+		};
+		console.log(allluckyprofit[0]);
+	},
+	getProfit: function (result) {
+		//current lucky detail
+		var luckyday = this.data.luckyday;
+		var luckyseq = this.data.luckyseq;
+		var luckybig = this.data.luckybig;
+		var luckysml1 = this.data.luckysml1;
+		var luckysml2 = this.data.luckysml2;
+		var luckysml3 = this.data.luckysml3;
+		var luckysml4 = this.data.luckysml4;
+		var luckysml5 = this.data.luckysml5;
+		var luckysml6 = this.data.luckysml6;
+		// lucky history arrays
+		var luckydate = [];
+		var luckysequence = [];
+		var luckynumber = [];
+		var luckynum1 = [];
+		var luckynum2 = [];
+		var luckynum3 = [];
+		var luckynum4 = [];
+		var luckynum5 = [];
+		var luckynum6 = [];
+		// lucky profits arrays
+		var luckyprofit = [];
+		var luckypro1 = [];
+		var luckypro2 = [];
+		var luckypro3 = [];
+		var luckypro4 = [];
+		var luckypro5 = [];
+		var luckypro6 = [];
+		var luckycount1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+		var luckycount = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+		var luckyserier = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49];
+		var profit = 0;
+		var pro1 = 0;
+		var pro2 = 0;
+		var pro3 = 0;
+		var pro4 = 0;
+		var pro5 = 0;
+		var pro6 = 0;
+		var tmpcount = 0;
+		for (var i = 0; i < result.length; i++) {
+			luckydate.push(result[i].luckydate);
+			luckysequence.push(result[i].luckysequence);
+			luckynumber.push(result[i].luckynumber);
+			luckynum1.push(result[i].luckynum1);
+			luckynum2.push(result[i].luckynum2);
+			luckynum3.push(result[i].luckynum3);
+			luckynum4.push(result[i].luckynum4);
+			luckynum5.push(result[i].luckynum5);
+			luckynum6.push(result[i].luckynum6);
 
-                            //再将发布者的信息添加到联系表中
-                            wx.getStorage({
-                                key: 'user_id',
-                                success: function(ress) {
-                                    var Contacts = Bmob.Object.extend("Contacts");
-                                    var contact = new Contacts();
-                                    var Events = Bmob.Object.extend("Events");
-                                    var event = new Events();
-                                    event.id = result.id;
-                                    var me = new Bmob.User();
-                                    var contactWay = "微信";
-                                    var contactValue = wx.getStorageSync("my_username");
-                                    me.id = ress.data;
-                                    contact.set("publisher", me); //发布人是自己
-                                    contact.set("currentUser", me); //参加的人也是自己
-                                    contact.set("event", event);
-                                    contact.set("realname", realname);
-                                    contact.set("contactWay", contactWay);
-                                    contact.set("contactValue", contactValue);
-                                    contact.save();
-                                    // console.log("contact table updated");
-                                },
-                            })
+			if (result[i].luckynumber == luckybig) {
+				profit = profit + 42;
+			} else {
+				profit = profit - 1;
+			};
+			luckyprofit.push(profit);
 
-                            console.log("发布成功,objectId:" + result.id);
-                            that.setData({
-                                isLoading: false,
-                                isdisabled: false,
-                                eventId: result.id,
-                            })
+			if ((result[i].luckynum1 == luckysml1) || (result[i].luckynum2 == luckysml1) || (result[i].luckynum3 == luckysml1) || (result[i].luckynum4 == luckysml1) || (result[i].luckynum5 == luckysml1) || (result[i].luckynum6 == luckysml1)) {
+				pro1 = pro1 + 7;
+			} else {
+				pro1 = pro1 - 1;
+			};
+			luckypro1.push(pro1);
+			if ((result[i].luckynum1 == luckysml2) || (result[i].luckynum2 == luckysml2) || (result[i].luckynum3 == luckysml2) || (result[i].luckynum4 == luckysml2) || (result[i].luckynum5 == luckysml2) || (result[i].luckynum6 == luckysml2)) {
+				pro2 = pro2 + 7;
+			} else {
+				pro2 = pro2 - 1;
+			};
+			luckypro2.push(pro2);
+			if ((result[i].luckynum1 == luckysml3) || (result[i].luckynum2 == luckysml3) || (result[i].luckynum3 == luckysml3) || (result[i].luckynum4 == luckysml3) || (result[i].luckynum5 == luckysml3) || (result[i].luckynum6 == luckysml3)) {
+				pro3 = pro3 + 7;
+			} else {
+				pro3 = pro3 - 1;
+			};
+			luckypro3.push(pro3);
+			if ((result[i].luckynum1 == luckysml4) || (result[i].luckynum2 == luckysml4) || (result[i].luckynum3 == luckysml4) || (result[i].luckynum4 == luckysml4) || (result[i].luckynum5 == luckysml4) || (result[i].luckynum6 == luckysml4)) {
+				pro4 = pro4 + 7;
+			} else {
+				pro4 = pro4 - 1;
+			};
+			luckypro4.push(pro4);
+			if ((result[i].luckynum1 == luckysml5) || (result[i].luckynum2 == luckysml5) || (result[i].luckynum3 == luckysml5) || (result[i].luckynum4 == luckysml5) || (result[i].luckynum5 == luckysml5) || (result[i].luckynum6 == luckysml5)) {
+				pro5 = pro5 + 7;
+			} else {
+				pro5 = pro5 - 1;
+			};
+			luckypro5.push(profit);
+			if ((result[i].luckynum1 == luckysml6) || (result[i].luckynum2 == luckysml6) || (result[i].luckynum3 == luckysml6) || (result[i].luckynum4 == luckysml6) || (result[i].luckynum5 == luckysml6) || (result[i].luckynum6 == luckysml6)) {
+				pro6 = pro6 + 7;
+			} else {
+				pro6 = pro6 - 1;
+			};
+			luckypro6.push(pro6);
+			//Update luckybig number count
+			tmpcount = luckycount[result[i].luckynumber - 1] + 1;
+			luckycount[result[i].luckynumber - 1] = tmpcount;
+			//Update small lucky number count
+			tmpcount = luckycount1[result[i].luckynum1 - 1] + 1;
+			luckycount1[result[i].luckynum1 - 1] = tmpcount;
+			tmpcount = luckycount1[result[i].luckynum2 - 1] + 1;
+			luckycount1[result[i].luckynum2 - 1] = tmpcount;
+			tmpcount = luckycount1[result[i].luckynum3 - 1] + 1;
+			luckycount1[result[i].luckynum3 - 1] = tmpcount;
+			tmpcount = luckycount1[result[i].luckynum4 - 1] + 1;
+			luckycount1[result[i].luckynum4 - 1] = tmpcount;
+			tmpcount = luckycount1[result[i].luckynum5 - 1] + 1;
+			luckycount1[result[i].luckynum5 - 1] = tmpcount;
+			tmpcount = luckycount1[result[i].luckynum6 - 1] + 1;
+			luckycount1[result[i].luckynum6 - 1] = tmpcount;
+		};
+		this.setData({
+			luckydate: luckydate,
+			luckysequence: luckysequence,
+			luckynumber: luckynumber,
+			luckynum1: luckynum1,
+			luckynum2: luckynum2,
+			luckynum3: luckynum3,
+			luckynum4: luckynum4,
+			luckynum5: luckynum5,
+			luckynum6: luckynum6,
+			luckyprofit: luckyprofit,
+			luckypro1: luckypro1,
+			luckypro2: luckypro2,
+			luckypro3: luckypro3,
+			luckypro4: luckypro4,
+			luckypro5: luckypro5,
+			luckypro6: luckypro6,
+			luckyserier: luckyserier,
+			luckycount: luckycount,
+			luckycount1: luckycount1
+		});
+	}
+});
 
-                            //报名成功后发送一条消息给当前用户
-                            wx.getStorage({
-                                key: 'user_openid',
-                                success: function(res) {
-                                    var openid = res.data;
-                                    //获取点击按钮的formId
-                                    var formId = e.detail.formId;
-                                    // console.log(formId);
-                                    // let actid = optionId;
-                                    // let pubid = publisherId;
-                                    var title = that.data.listTitle;
-                                    var address = that.data.address;
-                                    var adminname = that.data.adminname;
-                                    var adcontactWay = that.data.adcontactWay;
-                                    var adcontactValue = that.data.adcontactValue;
-                                    var adcontact = adcontactWay + " : " + adcontactValue;
-                                    // console.log(formId);
-                                    var temp = {
-                                        "touser": openid, //这里是填写发送对象的openid
-                                        "template_id": "b4x0oP6JtSBXsxsiTuTvoh0OfvfsBNyT0FShs52neRE", //这里填写模板ID，可以在小程序后台配置
-                                        "page": "pages/index/index", //这里填写formid
-                                        "form_id": formId,
-                                        "data": {
-                                            "keyword1": {
-                                                "value": title,
-                                            },
-                                            "keyword2": {
-                                                "value": address
-                                            },
-                                            "keyword3": {
-                                                "value": adminname
-                                            },
-                                            "keyword4": {
-                                                "value": adcontact
-                                            },
-                                            "keyword5": {
-                                                "value": "成功发布你爱的物件，请耐心等候"
-                                            }
-                                        },
-                                        "emphasis_keyword": ""
-                                    }
-                                    Bmob.sendMessage(temp).then(function(obj) {
-                                            console.log('发送成功')
-                                        },
-                                        function(err) {
-                                            common.showTip('失败' + err)
-                                        });
-                                },
-                            })
-                            // wx.redirectTo({
-                            //           url:"../index/index"
-                            // });
-                            //添加成功，返回成功之后的objectId(注意，返回的属性名字是id,而不是objectId)
-                            common.dataLoading("我爱成功发布", "success", function() {
-                                //重置表单
-                                that.setData({
-                                    title: '',
-                                    typeIndex: 0,
-                                    address: '点击选择位置',
-                                    longitude: 0, //经度
-                                    latitude: 0, //纬度
-                                    data: formate_data(myDate),
-                                    isHide: true,
-                                    peoplenum: 0,
-                                    peopleHide: false,
-                                    isAgree: false,
-                                    accountIndex: 0,
-                                    realname: "",
-                                    content: "",
-                                    contactValue: '',
-                                    noteNowLen: 0,
-                                    showInput: false,
-                                    src: "",
-                                    isSrc: false,
-                                    codeSrc: "",
-                                    isCodeSrc: false
-                                });
-                            });
-                        },
-                        error: function(result, error) {
-                            //添加失败
-                            console.log("发布失败发布=" + error);
-                            common.dataLoading("我爱失败发布", "loading");
-                            that.setData({
-                                isLoading: false,
-                                isdisabled: false
-                            })
-                        }
+//var lineop = {};
+function initlineChart(canvas, width, height) {
 
-                    })
-                },
-            })
-        }
-        setTimeout(function() {
-            that.setData({
-                showTopTips: false
-            });
-        }, 1000);
-    },
+	lineChart = echarts.init(canvas, null, {
+			width: width,
+			height: height
+		});
+	canvas.setChart(lineChart);
 
-    /**
-     * 生命周期函数--监听页面隐藏
-     */
-    onHide: function() {
+	var lineop = {
+		title: {
+			text: '号码走势',
+			left: 'center'
+		},
+		color: ["#37A2DA"],
+		xAxis: {
+			type: 'category',
+			boundaryGap: false,
+			data: [],
+			axisTick: {
+				show: true
+			},
+			// show: false
+		},
+		yAxis: {
+			x: 'center',
+			type: 'value',
+			axisTick: {
+				show: true
+			},
+			splitLine: {
+				lineStyle: {
+					type: 'dashed'
+				}
+			}
+			// show: false
+		},
+		series: [{
+				name: '2018',
+				type: 'line',
+				label: {
+					normal: {
+						show: true,
+						position: 'inside'
+					}
+				},
+				smooth: true,
+				data: [],
+			}
+		]
+	};
 
-    },
+	lineChart.setOption(lineop);
+	wx.hideLoading();
+	return lineChart;
 
-    /**
-     * 生命周期函数--监听页面卸载
-     */
-    onUnload: function() {
+}
+function initline1Chart(canvas, width, height) {
 
-    },
+	line1Chart = echarts.init(canvas, null, {
+			width: width,
+			height: height
+		});
+	canvas.setChart(line1Chart);
 
-    /**
-     * 页面相关事件处理函数--监听用户下拉动作
-     */
-    onPullDownRefresh: function() {
+	var line1op = {
+		title: {
+			text: '号码运势',
+			left: 'center'
+		},
+		color: ["#37A2DA"],
+		/* legend: {
+		data: ['2018'],
+		top: 50,
+		left: 'center',
+		backgroundColor: 'red',
+		z: 100
+		}, */
+		grid: {
+			containLabel: true
+		},
+		tooltip: {
+			show: true,
+			trigger: 'axis'
+		},
+		xAxis: {
+			type: 'category',
+			boundaryGap: false,
+			data: [],
+			axisTick: {
+				show: true
+			},
+			// show: false
+		},
+		yAxis: {
+			x: 'center',
+			type: 'value',
+			axisTick: {
+				show: true
+			},
+			splitLine: {
+				lineStyle: {
+					type: 'dashed'
+				}
+			}
+			// show: false
+		},
+		series: [{
+				name: '号码运势',
+				type: 'line',
+				label: {
+					normal: {
+						show: true,
+						position: 'inside'
+					}
+				},
+				smooth: true,
+				data: [],
+			}
+		]
+	};
 
-    },
+	line1Chart.setOption(line1op);
+	wx.hideLoading();
+	return lineChart;
+}
+function initpieChart(canvas, width, height) {
 
-    /**
-     * 页面上拉触底事件的处理函数
-     */
-    onReachBottom: function() {
+	pieChart = echarts.init(canvas, null, {
+			width: width,
+			height: height
+		});
+	canvas.setChart(pieChart);
 
-    },
+	var pieop = {
+		title: {
+			text: "号码热度",
+			left: 'center'
+		},
+		color: ['#37a2da'],
+		tooltip: {
+			trigger: 'axis',
+			axisPointer: { // 坐标轴指示器，坐标轴触发有效
+				type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+			}
+		},
+		/* legend: {
+		data: ['热度']
+		}, */
+		grid: {
+			left: 20,
+			right: 20,
+			bottom: 15,
+			top: 40,
+			containLabel: true
+		},
+		yAxis: [{
+				type: 'value',
+				axisLine: {
+					lineStyle: {
+						color: '#999'
+					}
+				},
+				axisLabel: {
+					color: '#666'
+				}
+			}
+		],
+		xAxis: [{
+				type: 'category',
+				axisTick: {
+					show: true
+				},
+				data: [],
+				axisLine: {
+					lineStyle: {
+						color: '#999'
+					}
+				},
+				axisLabel: {
+					color: '#666'
+				}
+			}
+		],
+		series: [{
+				name: '热度',
+				type: 'bar',
+				label: {
+					normal: {
+						show: true,
+						position: 'inside'
+					}
+				},
+				data: [],
+				itemStyle: {
+					// emphasis: {
+					//   color: '#37a2da'
+					// }
+				}
+			}
+		]
+	};
 
-    /**
-     * 用户点击右上角分享
-     */
-    onShareAppMessage: function() {
-
-    }
-})
-
-//根据物件类型获取物件类型名称
-function getTypeName(acttype) {
-    var acttypeName = "";
-    if (acttype == 1) acttypeName = "农产品";
-    else if (acttype == 2) acttypeName = "手工品";
-    else if (acttype == 3) acttypeName = "家用品";
-    else if (acttype == 4) acttypeName = "闲置";
-    else if (acttype == 5) acttypeName = "书籍";
-    else if (acttype == 6) acttypeName = "出行";
-    else if (acttype == 7) acttypeName = "电影";
-    else if (acttype == 8) acttypeName = "音乐";
-    else if (acttype == 9) acttypeName = "其他";
-    return acttypeName;
+	pieChart.setOption(pieop);
+	return pieChart;
 }
